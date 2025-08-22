@@ -1,0 +1,27 @@
+# Production configuration with environment variables
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:mysql://localhost:3306/productdb}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${DATABASE_USERNAME:mindful}
+    password: ${DATABASE_PASSWORD:mindful2025}
+  
+  jpa:
+    hibernate:
+      ddl-auto: validate  # Don't auto-create/update in production
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.MySQLDialect
+
+# Production JWT secret from environment
+jwt:
+  secret: ${JWT_SECRET:mySecretKey123456789012345678901234567890}
+  expiration: ${JWT_EXPIRATION:86400000}
+
+# Minimal logging for production
+logging:
+  level:
+    org.hibernate.SQL: WARN
+    com.productapp: INFO

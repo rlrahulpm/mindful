@@ -1,0 +1,23 @@
+# Development configuration with MySQL
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/productdb
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: mindful
+    password: mindful2025
+  
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+
+# Enhanced logging for development
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    com.productapp: DEBUG

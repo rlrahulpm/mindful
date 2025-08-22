@@ -21,10 +21,13 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes());
     }
     
-    public String generateJwtToken(String email, Long userId) {
+    public String generateJwtToken(String email, Long userId, Long organizationId, Boolean isSuperadmin, Boolean isGlobalSuperadmin) {
         return Jwts.builder()
                 .subject(email)
                 .claim("userId", userId)
+                .claim("organizationId", organizationId)
+                .claim("isSuperadmin", isSuperadmin)
+                .claim("isGlobalSuperadmin", isGlobalSuperadmin)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
                 .signWith(getSigningKey())
@@ -47,6 +50,33 @@ public class JwtUtil {
                 .parseSignedClaims(token)
                 .getPayload();
         return claims.get("userId", Long.class);
+    }
+    
+    public Long getOrganizationIdFromJwtToken(String token) {
+        Claims claims = Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+        return claims.get("organizationId", Long.class);
+    }
+    
+    public Boolean getIsSuperadminFromJwtToken(String token) {
+        Claims claims = Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+        return claims.get("isSuperadmin", Boolean.class);
+    }
+    
+    public Boolean getIsGlobalSuperadminFromJwtToken(String token) {
+        Claims claims = Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+        return claims.get("isGlobalSuperadmin", Boolean.class);
     }
     
     public boolean validateJwtToken(String authToken) {

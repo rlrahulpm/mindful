@@ -1,5 +1,6 @@
 package com.productapp.entity;
 
+import com.productapp.model.Organization;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -32,6 +33,13 @@ public class User {
     
     @Column(name = "is_superadmin", nullable = false)
     private Boolean isSuperadmin = false;
+    
+    @Column(name = "is_global_superadmin", nullable = false)
+    private Boolean isGlobalSuperadmin = false;
+    
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "organization_id")
+    private Organization organization;
     
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "role_id")
@@ -117,5 +125,21 @@ public class User {
     
     public void setRole(Role role) {
         this.role = role;
+    }
+    
+    public Boolean getIsGlobalSuperadmin() {
+        return isGlobalSuperadmin;
+    }
+    
+    public void setIsGlobalSuperadmin(Boolean isGlobalSuperadmin) {
+        this.isGlobalSuperadmin = isGlobalSuperadmin;
+    }
+    
+    public Organization getOrganization() {
+        return organization;
+    }
+    
+    public void setOrganization(Organization organization) {
+        this.organization = organization;
     }
 }

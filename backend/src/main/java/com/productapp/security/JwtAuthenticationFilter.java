@@ -30,8 +30,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (jwt != null && jwtUtil.validateJwtToken(jwt)) {
                 String email = jwtUtil.getEmailFromJwtToken(jwt);
                 Long userId = jwtUtil.getUserIdFromJwtToken(jwt);
+                Long organizationId = jwtUtil.getOrganizationIdFromJwtToken(jwt);
+                Boolean isSuperadmin = jwtUtil.getIsSuperadminFromJwtToken(jwt);
+                Boolean isGlobalSuperadmin = jwtUtil.getIsGlobalSuperadminFromJwtToken(jwt);
                 
-                UserPrincipal userPrincipal = new UserPrincipal(userId, email);
+                UserPrincipal userPrincipal = new UserPrincipal(userId, email, organizationId, isSuperadmin, isGlobalSuperadmin);
                 UsernamePasswordAuthenticationToken authentication = 
                     new UsernamePasswordAuthenticationToken(userPrincipal, null, new ArrayList<>());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

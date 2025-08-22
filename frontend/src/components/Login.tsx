@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './Auth.css';
 
@@ -89,8 +89,8 @@ const Login: React.FC = () => {
             </form>
             
             <div className="auth-footer">
-              <p>
-                Don't have an account? <Link to="/signup" className="auth-link">Create one</Link>
+              <p className="auth-note">
+                Contact your administrator for account access
               </p>
             </div>
           </div>

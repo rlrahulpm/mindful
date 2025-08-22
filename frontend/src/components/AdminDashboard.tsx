@@ -1,15 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { adminService } from '../services/adminService';
 import { Role, User, ProductModuleResponse, CreateRoleRequest, CreateUserRequest } from '../types/admin';
 import './AdminDashboard.css';
 
 const AdminDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'roles' | 'users'>('roles');
   const [roles, setRoles] = useState<Role[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [modules, setModules] = useState<ProductModuleResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [activeProductTab, setActiveProductTab] = useState<number | null>(null);
 
   // Modal states
@@ -127,13 +130,18 @@ const AdminDashboard: React.FC = () => {
       if (editingRole) {
         const updatedRole = await adminService.updateRole(editingRole.id, roleForm);
         setRoles(roles.map(r => r.id === updatedRole.id ? updatedRole : r));
+        setSuccessMessage('Role updated successfully!');
       } else {
         const newRole = await adminService.createRole(roleForm);
         setRoles([...roles, newRole]);
+        setSuccessMessage('Role created successfully!');
       }
       setShowRoleModal(false);
       setEditingRole(null);
       setRoleForm({ name: '', description: '', productModuleIds: [] });
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err: any) {
       setError('Failed to save role');
       console.error(err);
@@ -147,6 +155,10 @@ const AdminDashboard: React.FC = () => {
       setUsers([...users, newUser]);
       setShowUserModal(false);
       setUserForm({ email: '', password: '', roleId: undefined });
+      setSuccessMessage('User created successfully!');
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err: any) {
       setError('Failed to create user');
       console.error(err);
@@ -158,6 +170,8 @@ const AdminDashboard: React.FC = () => {
       try {
         await adminService.deleteRole(roleId);
         setRoles(roles.filter(r => r.id !== roleId));
+        setSuccessMessage('Role deleted successfully!');
+        setTimeout(() => setSuccessMessage(''), 3000);
       } catch (err: any) {
         setError('Failed to delete role');
         console.error(err);
@@ -207,33 +221,48 @@ const AdminDashboard: React.FC = () => {
   }
 
   return (
-    <div className="admin-container">
-      <div className="admin-header">
-        <h1 className="admin-title">Admin Dashboard</h1>
-        <p className="admin-subtitle">Manage roles and users</p>
+    <div className="modules-container">
+      <button 
+        onClick={() => navigate('/dashboard')} 
+        className="back-button"
+        aria-label="Back to dashboard"
+      >
+        <span className="material-icons">arrow_back</span>
+        Back
+      </button>
+      <div className="modules-header">
+        <div className="product-info">
+          <h1 className="product-title">Admin Dashboard</h1>
+          <p className="product-subtitle">Manage roles and users across your organization</p>
+        </div>
       </div>
 
       {error && <div className="alert alert-error">{error}</div>}
+      {successMessage && <div className="alert alert-success">{successMessage}</div>}
 
       <div className="admin-tabs">
         <button 
           className={`tab-btn ${activeTab === 'roles' ? 'active' : ''}`}
           onClick={() => setActiveTab('roles')}
         >
-          Roles ({roles.length})
+          <span className="material-icons">badge</span>
+          Roles
+          <span className="tab-count">{roles.length}</span>
         </button>
         <button 
           className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`}
           onClick={() => setActiveTab('users')}
         >
-          Users ({users.length})
+          <span className="material-icons">people</span>
+          Users
+          <span className="tab-count">{users.length}</span>
         </button>
       </div>
 
       {activeTab === 'roles' && (
         <div className="tab-content">
           <div className="section-header">
-            <h2>Role Management</h2>
+            <h2 className="section-title">Role Management</h2>
             <button 
               onClick={() => {
                 setShowRoleModal(true);
@@ -243,8 +272,9 @@ const AdminDashboard: React.FC = () => {
                   setActiveProductTab(products[0].productId);
                 }
               }}
-              className="btn btn-primary"
+              className="btn-primary-action"
             >
+              <span className="material-icons">add</span>
               Create Role
             </button>
           </div>
@@ -252,41 +282,67 @@ const AdminDashboard: React.FC = () => {
           <div className="roles-grid">
             {roles.map((role) => (
               <div key={role.id} className="role-card">
-                <div className="role-header">
-                  <h3 className="role-name">{role.name}</h3>
-                  <div className="role-actions">
-                    <button 
-                      onClick={() => openEditRole(role)}
-                      className="btn btn-secondary btn-sm"
-                    >
-                      Edit
-                    </button>
-                    <button 
-                      onClick={() => handleDeleteRole(role.id)}
-                      className="btn btn-danger btn-sm"
-                    >
-                      Delete
-                    </button>
+                <div className="card-header">
+                  <div className="card-icon">
+                    <span className="material-icons">badge</span>
+                  </div>
+                  <div className="card-info">
+                    <h3 className="card-title">{role.name}</h3>
+                    <p className="card-description">{role.description}</p>
                   </div>
                 </div>
-                <p className="role-description">{role.description}</p>
-                <div className="role-modules">
-                  <strong>Accessible Modules:</strong>
-                  {groupModulesByProduct(role.productModules).map((group) => (
-                    <div key={group.productName} className="product-module-group">
-                      <h4 className="product-group-name">{group.productName}</h4>
-                      <div className="module-tags">
-                        {group.modules.map((productModule) => (
-                          <span key={productModule.id} className="module-tag">
-                            {productModule.module.icon} {productModule.module.name}
-                          </span>
-                        ))}
+                
+                <div className="card-content">
+                  <div className="modules-section">
+                    <h4 className="modules-title">
+                      <span className="material-icons">dashboard</span>
+                      Accessible Modules
+                    </h4>
+                    {groupModulesByProduct(role.productModules).map((group) => (
+                      <div key={group.productName} className="product-module-group">
+                        <h5 className="product-group-name">{group.productName}</h5>
+                        <div className="module-tags">
+                          {group.modules.map((productModule) => (
+                            <span key={productModule.id} className="module-tag">
+                              <span className="material-icons">extension</span>
+                              {productModule.module.name}
+                            </span>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                    {role.productModules.length === 0 && (
+                      <p className="no-modules">No modules assigned</p>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="card-actions">
+                  <button 
+                    onClick={() => openEditRole(role)}
+                    className="action-btn edit-btn"
+                  >
+                    <span className="material-icons">edit</span>
+                    Edit
+                  </button>
+                  <button 
+                    onClick={() => handleDeleteRole(role.id)}
+                    className="action-btn delete-btn"
+                  >
+                    <span className="material-icons">delete</span>
+                    Delete
+                  </button>
                 </div>
               </div>
             ))}
+            
+            {roles.length === 0 && (
+              <div className="empty-state">
+                <span className="material-icons">badge</span>
+                <h3>No roles created yet</h3>
+                <p>Create your first role to manage user permissions</p>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -294,40 +350,51 @@ const AdminDashboard: React.FC = () => {
       {activeTab === 'users' && (
         <div className="tab-content">
           <div className="section-header">
-            <h2>User Management</h2>
+            <h2 className="section-title">User Management</h2>
             <button 
               onClick={() => setShowUserModal(true)}
-              className="btn btn-primary"
+              className="btn-primary-action"
             >
+              <span className="material-icons">person_add</span>
               Create User
             </button>
           </div>
 
-          <div className="users-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Superadmin</th>
-                  <th>Created</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((user) => (
-                  <tr key={user.id}>
-                    <td>{user.email}</td>
-                    <td>{user.role?.name || 'No Role'}</td>
-                    <td>
-                      <span className={`badge ${user.isSuperadmin ? 'badge-success' : 'badge-secondary'}`}>
-                        {user.isSuperadmin ? 'Yes' : 'No'}
+          <div className="users-grid">
+            {users.map((user) => (
+              <div key={user.id} className="user-card">
+                <div className="user-avatar">
+                  <span className="material-icons">account_circle</span>
+                </div>
+                <div className="user-info">
+                  <h3 className="user-email">{user.email}</h3>
+                  <div className="user-meta">
+                    <span className="user-role">
+                      <span className="material-icons">badge</span>
+                      {user.role?.name || 'No Role'}
+                    </span>
+                    {user.isSuperadmin && (
+                      <span className="badge badge-admin">
+                        <span className="material-icons">admin_panel_settings</span>
+                        Admin
                       </span>
-                    </td>
-                    <td>{new Date(user.createdAt).toLocaleDateString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    )}
+                  </div>
+                  <p className="user-created">
+                    <span className="material-icons">calendar_today</span>
+                    Joined {new Date(user.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+            ))}
+            
+            {users.length === 0 && (
+              <div className="empty-state">
+                <span className="material-icons">people</span>
+                <h3>No users created yet</h3>
+                <p>Create your first user to grant system access</p>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -342,6 +409,9 @@ const AdminDashboard: React.FC = () => {
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3 className="modal-title">
+                <span className="material-icons">
+                  {editingRole ? 'edit' : 'add_circle'}
+                </span>
                 {editingRole ? 'Edit Role' : 'Create New Role'}
               </h3>
               <button 
@@ -352,12 +422,15 @@ const AdminDashboard: React.FC = () => {
                 }}
                 className="modal-close-btn"
               >
-                ×
+                <span className="material-icons">close</span>
               </button>
             </div>
             <form onSubmit={handleCreateRole} className="modal-form">
               <div className="form-group">
-                <label htmlFor="roleName" className="form-label">Role Name</label>
+                <label htmlFor="roleName" className="form-label">
+                  <span className="material-icons">label</span>
+                  Role Name
+                </label>
                 <input
                   type="text"
                   id="roleName"
@@ -370,7 +443,10 @@ const AdminDashboard: React.FC = () => {
               </div>
               
               <div className="form-group">
-                <label htmlFor="roleDescription" className="form-label">Description</label>
+                <label htmlFor="roleDescription" className="form-label">
+                  <span className="material-icons">description</span>
+                  Description
+                </label>
                 <textarea
                   id="roleDescription"
                   value={roleForm.description}
@@ -382,8 +458,11 @@ const AdminDashboard: React.FC = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Grant Access to Modules</label>
-                <p className="form-help-text">Select which modules this role can access by choosing products and their modules</p>
+                <label className="form-label">
+                  <span className="material-icons">dashboard</span>
+                  Grant Access to Modules
+                </label>
+                <p className="form-help-text">Select which modules this role can access</p>
                 
                 {getUniqueProducts().length > 0 && (
                   <div className="product-module-tabs">
@@ -414,7 +493,8 @@ const AdminDashboard: React.FC = () => {
                               />
                               <span className="checkbox-text">
                                 <span className="module-info">
-                                  {productModule.module.icon} {productModule.module.name}
+                                  <span className="material-icons">extension</span>
+                                  {productModule.module.name}
                                 </span>
                                 <span className="module-description">{productModule.module.description}</span>
                               </span>
@@ -422,8 +502,8 @@ const AdminDashboard: React.FC = () => {
                           ))
                         ) : (
                           <div className="no-modules-message">
-                            <p>No modules are available for this product yet.</p>
-                            <p>Modules can be added to products by administrators.</p>
+                            <span className="material-icons">info</span>
+                            <p>No modules available for this product</p>
                           </div>
                         )}
                       </div>
@@ -440,11 +520,14 @@ const AdminDashboard: React.FC = () => {
                     setEditingRole(null);
                     setRoleForm({ name: '', description: '', productModuleIds: [] });
                   }}
-                  className="btn btn-secondary"
+                  className="btn-secondary"
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary">
+                <button type="submit" className="btn-primary">
+                  <span className="material-icons">
+                    {editingRole ? 'save' : 'add'}
+                  </span>
                   {editingRole ? 'Update Role' : 'Create Role'}
                 </button>
               </div>
@@ -461,7 +544,10 @@ const AdminDashboard: React.FC = () => {
         }}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 className="modal-title">Create New User</h3>
+              <h3 className="modal-title">
+                <span className="material-icons">person_add</span>
+                Create New User
+              </h3>
               <button 
                 onClick={() => {
                   setShowUserModal(false);
@@ -469,31 +555,37 @@ const AdminDashboard: React.FC = () => {
                 }}
                 className="modal-close-btn"
               >
-                ×
+                <span className="material-icons">close</span>
               </button>
             </div>
             <form onSubmit={handleCreateUser} className="modal-form">
               <div className="form-group">
-                <label htmlFor="userEmail" className="form-label">Email</label>
+                <label htmlFor="userEmail" className="form-label">
+                  <span className="material-icons">email</span>
+                  Email
+                </label>
                 <input
                   type="email"
                   id="userEmail"
                   value={userForm.email}
                   onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
-                  placeholder="Enter email"
+                  placeholder="Enter email address"
                   required
                   className="form-control"
                 />
               </div>
               
               <div className="form-group">
-                <label htmlFor="userPassword" className="form-label">Password</label>
+                <label htmlFor="userPassword" className="form-label">
+                  <span className="material-icons">lock</span>
+                  Password
+                </label>
                 <input
                   type="password"
                   id="userPassword"
                   value={userForm.password}
                   onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
-                  placeholder="Enter password"
+                  placeholder="Enter password (min 6 characters)"
                   required
                   minLength={6}
                   className="form-control"
@@ -501,7 +593,10 @@ const AdminDashboard: React.FC = () => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="userRole" className="form-label">Role</label>
+                <label htmlFor="userRole" className="form-label">
+                  <span className="material-icons">badge</span>
+                  Role
+                </label>
                 <select
                   id="userRole"
                   value={userForm.roleId || ''}
@@ -527,11 +622,12 @@ const AdminDashboard: React.FC = () => {
                     setShowUserModal(false);
                     setUserForm({ email: '', password: '', roleId: undefined });
                   }}
-                  className="btn btn-secondary"
+                  className="btn-secondary"
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary">
+                <button type="submit" className="btn-primary">
+                  <span className="material-icons">person_add</span>
                   Create User
                 </button>
               </div>

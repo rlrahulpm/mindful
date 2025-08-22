@@ -56,11 +56,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       clearTimeout(refreshTimeoutRef.current);
     }
 
-    // Check every 2 minutes for token refresh
+    // Check every 5 minutes for token refresh (was 2 minutes)
     refreshTimeoutRef.current = setTimeout(() => {
       refreshTokenIfNeeded();
       scheduleTokenRefresh();
-    }, 2 * 60 * 1000);
+    }, 5 * 60 * 1000);
   };
 
   useEffect(() => {
@@ -105,16 +105,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const signup = async (email: string, password: string) => {
-    setIsLoading(true);
-    try {
-      await authService.signup({ email, password });
-    } catch (error) {
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const logout = () => {
     if (refreshTimeoutRef.current) {
@@ -132,7 +122,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user,
     token,
     login,
-    signup,
     logout,
     isLoading,
   };

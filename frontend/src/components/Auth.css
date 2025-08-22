@@ -233,6 +233,12 @@
   font-size: 15px;
 }
 
+.auth-note {
+  color: var(--gray-light) !important;
+  font-style: italic;
+  font-size: 14px !important;
+}
+
 .auth-link {
   color: var(--primary-orange);
   font-weight: 700;

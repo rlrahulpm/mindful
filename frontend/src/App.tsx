@@ -5,9 +5,9 @@ import PrivateRoute from './components/PrivateRoute';
 import SuperadminRoute from './components/SuperadminRoute';
 import Navbar from './components/Navbar';
 import Login from './components/Login';
-import Signup from './components/Signup';
 import Dashboard from './components/Dashboard';
 import ProductModules from './components/ProductModules';
+import ProductBasics from './components/ProductBasics';
 import AdminDashboard from './components/AdminDashboard';
 import './App.css';
 
@@ -20,7 +20,6 @@ function App() {
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
             <Route 
               path="/dashboard" 
               element={
@@ -34,6 +33,14 @@ function App() {
               element={
                 <PrivateRoute>
                   <ProductModules />
+                </PrivateRoute>
+              } 
+            />
+            <Route 
+              path="/products/:productId/modules/basics" 
+              element={
+                <PrivateRoute>
+                  <ProductBasics />
                 </PrivateRoute>
               } 
             />

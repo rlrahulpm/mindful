@@ -7,10 +7,6 @@ export const authService = {
     return response.data;
   },
 
-  async signup(userData: SignupRequest): Promise<any> {
-    const response = await api.post('/auth/signup', userData);
-    return response.data;
-  },
 
   async logout(): Promise<void> {
     await api.post('/auth/logout');

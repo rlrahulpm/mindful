@@ -24,7 +24,7 @@ spring:
 
 jwt:
   secret: ${JWT_SECRET:L9IpFzkQ1yerb0DzQfwYBXOMwrcQxKtfuFQGb5RCwUo=}
-  expiration: ${JWT_EXPIRATION:900000}
+  expiration: ${JWT_EXPIRATION:86400000}
 
 # Logging Configuration
 logging:

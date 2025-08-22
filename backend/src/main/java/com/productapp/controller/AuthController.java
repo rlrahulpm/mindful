@@ -40,6 +40,8 @@ public class AuthController {
     @Autowired
     private JwtUtil jwtUtil;
     
+    // Signup disabled - users are created by admins only
+    /*
     @PostMapping("/signup")
     @Operation(summary = "Register a new user", description = "Create a new user account with email and password")
     @ApiResponses(value = {
@@ -64,6 +66,7 @@ public class AuthController {
         
         return ResponseEntity.ok(new AuthResponse("User registered successfully"));
     }
+    */
     
     @PostMapping("/login")
     @Operation(summary = "Login user", description = "Authenticate user and return JWT token")
@@ -84,7 +87,8 @@ public class AuthController {
             throw new org.springframework.security.authentication.BadCredentialsException("Invalid email or password");
         }
         
-        String jwt = jwtUtil.generateJwtToken(user.getEmail(), user.getId());
+        String jwt = jwtUtil.generateJwtToken(user.getEmail(), user.getId(), 
+            user.getOrganization().getId(), user.getIsSuperadmin(), user.getIsGlobalSuperadmin());
         logger.info("User logged in successfully: {}", user.getEmail());
         
         return ResponseEntity.ok(new AuthResponse(jwt, user.getId(), user.getEmail(), user.getIsSuperadmin()));
@@ -104,7 +108,8 @@ public class AuthController {
         User user = userRepository.findById(userPrincipal.getId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
-        String newToken = jwtUtil.generateJwtToken(user.getEmail(), user.getId());
+        String newToken = jwtUtil.generateJwtToken(user.getEmail(), user.getId(), 
+            user.getOrganization().getId(), user.getIsSuperadmin(), user.getIsGlobalSuperadmin());
         logger.info("Token refreshed for user: {}", user.getEmail());
         
         return ResponseEntity.ok(new AuthResponse(newToken, user.getId(), user.getEmail(), user.getIsSuperadmin()));

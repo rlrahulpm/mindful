@@ -85,16 +85,7 @@ const Navbar: React.FC = () => {
                 </div>
               )}
             </div>
-          ) : (
-            <div className="navbar-auth">
-              <Link to="/login" className="btn-nav btn-nav-secondary">
-                Login
-              </Link>
-              <Link to="/signup" className="btn-nav btn-nav-primary">
-                Sign Up
-              </Link>
-            </div>
-          )}
+          ) : null}
         </div>
       </div>
     </nav>

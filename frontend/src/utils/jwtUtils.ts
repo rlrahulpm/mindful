@@ -38,7 +38,7 @@ export const getTokenExpirationTime = (token: string): number | null => {
   return payload ? payload.exp * 1000 : null;
 };
 
-export const shouldRefreshToken = (token: string, refreshThresholdMinutes: number = 5): boolean => {
+export const shouldRefreshToken = (token: string, refreshThresholdMinutes: number = 30): boolean => {
   const expirationTime = getTokenExpirationTime(token);
   if (!expirationTime) return true;
   
@@ -46,5 +46,6 @@ export const shouldRefreshToken = (token: string, refreshThresholdMinutes: numbe
   const timeUntilExpiration = expirationTime - now;
   const refreshThreshold = refreshThresholdMinutes * 60 * 1000; // Convert to milliseconds
   
+  // Refresh when 30 minutes or less remain (was 5 minutes)
   return timeUntilExpiration <= refreshThreshold;
 };

@@ -1,5 +1,6 @@
 package com.productapp.entity;
 
+import com.productapp.model.Organization;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.data.annotation.CreatedDate;
@@ -24,6 +25,10 @@ public class Product {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "organization_id", nullable = false)
+    private Organization organization;
     
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -78,5 +83,13 @@ public class Product {
     
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+    
+    public Organization getOrganization() {
+        return organization;
+    }
+    
+    public void setOrganization(Organization organization) {
+        this.organization = organization;
     }
 }

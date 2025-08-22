@@ -22,12 +22,13 @@ public class SwaggerConfig {
         
         return new OpenAPI()
                 .info(new Info()
-                        .title("Product Management API")
+                        .title("Mindful - Multi-Tenant Product Management API")
                         .version("1.0.0")
-                        .description("REST API for Product Management Application")
+                        .description("REST API for Multi-Tenant Product Management Application with Organization Support. " +
+                                   "Features role-based access control, organization-scoped data isolation, and hierarchical admin structure.")
                         .contact(new Contact()
-                                .name("Product Management Team")
-                                .email("support@productapp.com"))
+                                .name("Mindful Development Team")
+                                .email("support@mindful.com"))
                         .license(new License()
                                 .name("Apache 2.0")
                                 .url("http://www.apache.org/licenses/LICENSE-2.0.html")))

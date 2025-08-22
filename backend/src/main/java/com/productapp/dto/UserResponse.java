@@ -7,16 +7,21 @@ public class UserResponse {
     private Long id;
     private String email;
     private Boolean isSuperadmin;
+    private Boolean isGlobalSuperadmin;
     private RoleResponse role;
+    private OrganizationResponse organization;
     private LocalDateTime createdAt;
     
     public UserResponse() {}
     
-    public UserResponse(Long id, String email, Boolean isSuperadmin, RoleResponse role, LocalDateTime createdAt) {
+    public UserResponse(Long id, String email, Boolean isSuperadmin, Boolean isGlobalSuperadmin, 
+                       RoleResponse role, OrganizationResponse organization, LocalDateTime createdAt) {
         this.id = id;
         this.email = email;
         this.isSuperadmin = isSuperadmin;
+        this.isGlobalSuperadmin = isGlobalSuperadmin;
         this.role = role;
+        this.organization = organization;
         this.createdAt = createdAt;
     }
     
@@ -59,5 +64,21 @@ public class UserResponse {
     
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+    
+    public Boolean getIsGlobalSuperadmin() {
+        return isGlobalSuperadmin;
+    }
+    
+    public void setIsGlobalSuperadmin(Boolean isGlobalSuperadmin) {
+        this.isGlobalSuperadmin = isGlobalSuperadmin;
+    }
+    
+    public OrganizationResponse getOrganization() {
+        return organization;
+    }
+    
+    public void setOrganization(OrganizationResponse organization) {
+        this.organization = organization;
     }
 }

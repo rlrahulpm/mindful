@@ -23,4 +23,11 @@ public interface ProductModuleRepository extends JpaRepository<ProductModule, Lo
            "WHERE pm.product.id = :productId " +
            "AND pm.module.id = :moduleId")
     ProductModule findByProductIdAndModuleId(@Param("productId") Long productId, @Param("moduleId") Long moduleId);
+    
+    @Query("SELECT pm FROM ProductModule pm " +
+           "JOIN FETCH pm.product p " +
+           "JOIN FETCH pm.module m " +
+           "WHERE p.organization.id = :organizationId " +
+           "ORDER BY p.productName, m.displayOrder")
+    List<ProductModule> findByProductOrganizationId(@Param("organizationId") Long organizationId);
 }

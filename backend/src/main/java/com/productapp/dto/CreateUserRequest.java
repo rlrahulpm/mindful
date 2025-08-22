@@ -2,6 +2,7 @@ package com.productapp.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public class CreateUserRequest {
@@ -16,12 +17,16 @@ public class CreateUserRequest {
     
     private Long roleId;
     
+    // Organization ID is no longer required - automatically assigned from current user's organization
+    private Long organizationId;
+    
     public CreateUserRequest() {}
     
-    public CreateUserRequest(String email, String password, Long roleId) {
+    public CreateUserRequest(String email, String password, Long roleId, Long organizationId) {
         this.email = email;
         this.password = password;
         this.roleId = roleId;
+        this.organizationId = organizationId;
     }
     
     // Getters and Setters
@@ -47,5 +52,13 @@ public class CreateUserRequest {
     
     public void setRoleId(Long roleId) {
         this.roleId = roleId;
+    }
+    
+    public Long getOrganizationId() {
+        return organizationId;
+    }
+    
+    public void setOrganizationId(Long organizationId) {
+        this.organizationId = organizationId;
     }
 }

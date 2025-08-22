@@ -76,6 +76,7 @@ public class ProductController {
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userPrincipal.getId()));
         
         Product product = new Product(productRequest.getProductName(), user);
+        product.setOrganization(user.getOrganization()); // Set organization from user
         Product savedProduct = productRepository.save(product);
         logger.info("Product created successfully with ID: {}", savedProduct.getId());
         
@@ -111,25 +112,29 @@ public class ProductController {
         
         Set<Product> accessibleProducts = new HashSet<>();
         
-        // 1. Add products owned by the user
-        List<Product> ownedProducts = productRepository.findByUserId(userPrincipal.getId());
+        // 1. Add products owned by the user within their organization
+        List<Product> ownedProducts = productRepository.findByUserIdAndOrganizationId(
+            userPrincipal.getId(), user.getOrganization().getId());
         accessibleProducts.addAll(ownedProducts);
-        logger.info("User owns {} products", ownedProducts.size());
+        logger.info("User owns {} products in their organization", ownedProducts.size());
         
-        // 2. Add products accessible through role permissions
+        // 2. Add products accessible through role permissions (within same organization)
         if (user.getRole() != null) {
             logger.info("User has role: {}", user.getRole().getName());
             
             // Get all product-modules associated with the user's role
             Set<ProductModule> roleProductModules = user.getRole().getProductModules();
             
-            // Extract unique products from the product-modules
+            // Extract unique products from the product-modules (filter by organization)
             Set<Product> roleAccessibleProducts = roleProductModules.stream()
                     .map(ProductModule::getProduct)
+                    .filter(product -> product.getOrganization() != null && 
+                           product.getOrganization().getId().equals(user.getOrganization().getId()))
                     .collect(Collectors.toSet());
             
             accessibleProducts.addAll(roleAccessibleProducts);
-            logger.info("User has access to {} additional products through role", roleAccessibleProducts.size());
+            logger.info("User has access to {} additional products through role in their organization", 
+                       roleAccessibleProducts.size());
         }
         
         // Convert to response DTOs

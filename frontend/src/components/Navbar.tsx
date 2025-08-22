@@ -1,69 +1,101 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import './Navbar.css';
 
 const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.hamburger-menu') && !target.closest('.hamburger-button')) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMenuOpen]);
+
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
+  const closeMenu = () => {
+    setIsMenuOpen(false);
+  };
 
   return (
-    <nav style={{ 
-      padding: '10px 20px', 
-      backgroundColor: '#007bff', 
-      color: 'white',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center'
-    }}>
-      <Link to="/" style={{ color: 'white', textDecoration: 'none', fontSize: '24px', fontWeight: 'bold' }}>
-        Product Manager
-      </Link>
-      
-      <div>
-        {user ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <span>Welcome, {user.email}</span>
-            <button 
-              onClick={logout}
-              style={{ 
-                padding: '8px 15px', 
-                backgroundColor: 'transparent', 
-                color: 'white', 
-                border: '1px solid white', 
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
-              Logout
-            </button>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <Link 
-              to="/login" 
-              style={{ 
-                color: 'white', 
-                textDecoration: 'none', 
-                padding: '8px 15px',
-                border: '1px solid white',
-                borderRadius: '4px'
-              }}
-            >
-              Login
-            </Link>
-            <Link 
-              to="/signup" 
-              style={{ 
-                color: '#007bff', 
-                backgroundColor: 'white',
-                textDecoration: 'none', 
-                padding: '8px 15px',
-                borderRadius: '4px'
-              }}
-            >
-              Sign Up
-            </Link>
-          </div>
-        )}
+    <nav className="navbar">
+      <div className="navbar-container">
+        <Link to="/" className="navbar-brand">
+          <span className="brand-icon">◈</span>
+          <span className="brand-text">Mindful</span>
+        </Link>
+        
+        <div className="navbar-menu">
+          {user ? (
+            <div className="hamburger-container">
+              <button 
+                className={`hamburger-button ${isMenuOpen ? 'active' : ''}`}
+                onClick={toggleMenu}
+                aria-label="Toggle menu"
+              >
+                <span className="hamburger-line"></span>
+                <span className="hamburger-line"></span>
+                <span className="hamburger-line"></span>
+              </button>
+              
+              {isMenuOpen && (
+                <div className="hamburger-menu">
+                  <div className="menu-item menu-email">
+                    <span className="menu-label">Signed in as:</span>
+                    <span className="menu-value">{user.email}</span>
+                  </div>
+                  
+                  {user.isSuperadmin && (
+                    <Link 
+                      to="/admin" 
+                      className="menu-item menu-link"
+                      onClick={closeMenu}
+                    >
+                      <span className="menu-icon material-icons">admin_panel_settings</span>
+                      Admin Dashboard
+                    </Link>
+                  )}
+                  
+                  <button 
+                    onClick={() => {
+                      logout();
+                      closeMenu();
+                    }} 
+                    className="menu-item menu-button"
+                  >
+                    <span className="menu-icon material-icons">logout</span>
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="navbar-auth">
+              <Link to="/login" className="btn-nav btn-nav-secondary">
+                Login
+              </Link>
+              <Link to="/signup" className="btn-nav btn-nav-primary">
+                Sign Up
+              </Link>
+            </div>
+          )}
+        </div>
       </div>
     </nav>
   );

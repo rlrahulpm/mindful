@@ -1,12 +1,14 @@
 export interface User {
   id: number;
   email: string;
+  isSuperadmin: boolean;
 }
 
 export interface AuthResponse {
   token: string;
   userId: number;
   email: string;
+  isSuperadmin: boolean;
 }
 
 export interface LoginRequest {

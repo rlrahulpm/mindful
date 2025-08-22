@@ -30,6 +30,13 @@ public class User {
     @Size(min = 6)
     private String password;
     
+    @Column(name = "is_superadmin", nullable = false)
+    private Boolean isSuperadmin = false;
+    
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "role_id")
+    private Role role;
+    
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -94,5 +101,21 @@ public class User {
     
     public void setProducts(List<Product> products) {
         this.products = products;
+    }
+    
+    public Boolean getIsSuperadmin() {
+        return isSuperadmin;
+    }
+    
+    public void setIsSuperadmin(Boolean isSuperadmin) {
+        this.isSuperadmin = isSuperadmin;
+    }
+    
+    public Role getRole() {
+        return role;
+    }
+    
+    public void setRole(Role role) {
+        this.role = role;
     }
 }

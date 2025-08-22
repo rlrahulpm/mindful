@@ -1,0 +1,475 @@
+.admin-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.admin-header {
+  margin-bottom: 40px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid var(--gray-lighter);
+}
+
+.admin-title {
+  font-size: 2.5rem;
+  color: var(--black);
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+.admin-subtitle {
+  color: var(--gray-medium);
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.admin-tabs {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 32px;
+  border-bottom: 2px solid var(--gray-lighter);
+}
+
+.tab-btn {
+  padding: 12px 24px;
+  border: none;
+  background: none;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--gray-medium);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.tab-btn.active {
+  color: var(--primary-orange);
+  border-bottom-color: var(--primary-orange);
+}
+
+.tab-btn:hover {
+  color: var(--primary-orange);
+}
+
+.tab-content {
+  margin-top: 32px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.section-header h2 {
+  color: var(--black);
+  font-size: 1.75rem;
+  margin: 0;
+}
+
+/* Roles Grid */
+.roles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 24px;
+}
+
+.role-card {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  border: 2px solid var(--gray-lighter);
+  transition: all 0.3s ease;
+}
+
+.role-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary-orange-light);
+}
+
+.role-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.role-name {
+  font-size: 1.25rem;
+  color: var(--black);
+  margin: 0;
+  font-weight: 600;
+}
+
+.role-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.role-description {
+  color: var(--gray-medium);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.role-modules {
+  border-top: 1px solid var(--gray-lighter);
+  padding-top: 16px;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.role-modules::-webkit-scrollbar {
+  width: 4px;
+}
+
+.role-modules::-webkit-scrollbar-track {
+  background: var(--gray-lighter);
+  border-radius: 2px;
+}
+
+.role-modules::-webkit-scrollbar-thumb {
+  background: var(--gray-light);
+  border-radius: 2px;
+}
+
+.role-modules::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-dark);
+}
+
+.role-modules strong {
+  color: var(--black);
+  font-size: 0.9rem;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.module-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.module-tag {
+  background: var(--blue-light);
+  color: var(--blue-dark);
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: 1px solid var(--blue);
+}
+
+/* Product Module Groups in Role Cards */
+.product-module-group {
+  margin-top: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--gray-lighter);
+}
+
+.product-module-group:last-child {
+  border-bottom: none;
+}
+
+.product-module-group:first-child {
+  margin-top: 8px;
+}
+
+.product-group-name {
+  margin: 0 0 8px 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--primary-orange);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Users Table */
+.users-table {
+  background: var(--white);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.users-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.users-table th {
+  background: var(--gray-lighter);
+  color: var(--black);
+  font-weight: 600;
+  padding: 16px;
+  text-align: left;
+  border-bottom: 2px solid var(--gray-light);
+}
+
+.users-table td {
+  padding: 16px;
+  border-bottom: 1px solid var(--gray-lighter);
+  color: var(--gray-dark);
+}
+
+.users-table tr:hover {
+  background: var(--gray-lighter);
+}
+
+.badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.badge-success {
+  background: #22c55e;
+  color: white;
+}
+
+.badge-secondary {
+  background: var(--gray-light);
+  color: var(--gray-dark);
+}
+
+/* Button Styles */
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+}
+
+.btn-danger {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+}
+
+.btn-danger:hover {
+  background-color: #dc2626;
+}
+
+/* Modal Extensions - Legacy styles for old interface */
+.modules-selection-legacy {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 16px;
+  border: 2px solid var(--gray-lighter);
+  border-radius: 8px;
+}
+
+/* Loading State */
+.loading-state {
+  text-align: center;
+  padding: 80px 20px;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--gray-lighter);
+  border-top-color: var(--primary-orange);
+  border-radius: 50%;
+  margin: 0 auto 20px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .admin-tabs {
+    flex-direction: column;
+  }
+  
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .roles-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .role-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .users-table {
+    overflow-x: auto;
+  }
+}
+
+/* Enhanced form styles */
+.form-help-text {
+  color: var(--gray-medium);
+  font-size: 0.9rem;
+  margin: 4px 0 12px 0;
+  line-height: 1.4;
+}
+
+.checkbox-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.module-info {
+  font-weight: 500;
+  color: var(--black);
+}
+
+.product-info {
+  font-size: 0.8rem;
+  color: var(--gray-medium);
+}
+
+.product-name {
+  color: var(--gray-medium);
+  font-weight: normal;
+  margin-left: 8px;
+}
+
+/* Product Module Tabs */
+.product-module-tabs {
+  border: 2px solid var(--gray-lighter);
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+}
+
+.product-tabs {
+  display: flex;
+  background-color: var(--gray-lighter);
+  border-bottom: 1px solid var(--gray-light);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gray-light) var(--gray-lighter);
+  max-width: 100%;
+}
+
+.product-tabs::-webkit-scrollbar {
+  height: 6px;
+}
+
+.product-tabs::-webkit-scrollbar-track {
+  background: var(--gray-lighter);
+}
+
+.product-tabs::-webkit-scrollbar-thumb {
+  background: var(--gray-light);
+  border-radius: 3px;
+}
+
+.product-tabs::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-dark);
+}
+
+.product-tab {
+  flex: 0 0 auto;
+  min-width: 120px;
+  padding: 12px 24px;
+  border: none;
+  background: transparent;
+  color: var(--gray-dark);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-bottom: 3px solid transparent;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.product-tab:hover {
+  background-color: var(--gray-light);
+  color: var(--primary-orange);
+}
+
+.product-tab.active {
+  background-color: var(--white);
+  color: var(--primary-orange);
+  border-bottom-color: var(--primary-orange);
+  font-weight: 600;
+}
+
+.modules-selection {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+  padding: 20px;
+  background-color: var(--white);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--gray-lighter);
+  transition: all 0.3s ease;
+}
+
+.checkbox-label:hover {
+  background-color: var(--gray-lighter);
+  border-color: var(--primary-orange-light);
+}
+
+.checkbox-label input[type="checkbox"] {
+  margin: 2px 0 0 0;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.checkbox-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.module-info {
+  font-weight: 600;
+  color: var(--black);
+  font-size: 0.95rem;
+}
+
+.module-description {
+  font-size: 0.85rem;
+  color: var(--gray-medium);
+  line-height: 1.4;
+}
+
+.no-modules-message {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--gray-medium);
+}
+
+.no-modules-message p {
+  margin: 0 0 8px 0;
+  line-height: 1.5;
+}
+
+.no-modules-message p:last-child {
+  margin-bottom: 0;
+  font-size: 0.9rem;
+}

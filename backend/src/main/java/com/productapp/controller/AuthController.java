@@ -62,7 +62,7 @@ public class AuthController {
         User savedUser = userRepository.save(user);
         logger.info("User registered successfully with ID: {}", savedUser.getId());
         
-        return ResponseEntity.ok(new AuthResponse("User registered successfully", savedUser.getId(), null));
+        return ResponseEntity.ok(new AuthResponse("User registered successfully"));
     }
     
     @PostMapping("/login")
@@ -87,7 +87,27 @@ public class AuthController {
         String jwt = jwtUtil.generateJwtToken(user.getEmail(), user.getId());
         logger.info("User logged in successfully: {}", user.getEmail());
         
-        return ResponseEntity.ok(new AuthResponse(jwt, user.getId(), user.getEmail()));
+        return ResponseEntity.ok(new AuthResponse(jwt, user.getId(), user.getEmail(), user.getIsSuperadmin()));
+    }
+    
+    @PostMapping("/refresh")
+    @Operation(summary = "Refresh JWT token", description = "Refresh the current user's JWT token")
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Token refreshed successfully",
+                content = @Content(schema = @Schema(implementation = AuthResponse.class))),
+        @ApiResponse(responseCode = "401", description = "Invalid or expired token",
+                content = @Content)
+    })
+    public ResponseEntity<?> refreshToken(Authentication authentication) {
+        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+        User user = userRepository.findById(userPrincipal.getId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        String newToken = jwtUtil.generateJwtToken(user.getEmail(), user.getId());
+        logger.info("Token refreshed for user: {}", user.getEmail());
+        
+        return ResponseEntity.ok(new AuthResponse(newToken, user.getId(), user.getEmail(), user.getIsSuperadmin()));
     }
     
     @PostMapping("/logout")

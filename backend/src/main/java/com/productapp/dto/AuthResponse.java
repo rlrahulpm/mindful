@@ -4,14 +4,16 @@ public class AuthResponse {
     private String token;
     private Long userId;
     private String email;
+    private Boolean isSuperadmin;
     private String message;
     
     public AuthResponse() {}
     
-    public AuthResponse(String token, Long userId, String email) {
+    public AuthResponse(String token, Long userId, String email, Boolean isSuperadmin) {
         this.token = token;
         this.userId = userId;
         this.email = email;
+        this.isSuperadmin = isSuperadmin;
     }
     
     public AuthResponse(String message) {
@@ -48,5 +50,13 @@ public class AuthResponse {
     
     public void setMessage(String message) {
         this.message = message;
+    }
+    
+    public Boolean getIsSuperadmin() {
+        return isSuperadmin;
+    }
+    
+    public void setIsSuperadmin(Boolean isSuperadmin) {
+        this.isSuperadmin = isSuperadmin;
     }
 }

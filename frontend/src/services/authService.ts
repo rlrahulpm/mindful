@@ -16,6 +16,11 @@ export const authService = {
     await api.post('/auth/logout');
   },
 
+  async refreshToken(): Promise<AuthResponse> {
+    const response = await api.post('/auth/refresh');
+    return response.data;
+  },
+
   setAuthToken(token: string) {
     localStorage.setItem('token', token);
   },

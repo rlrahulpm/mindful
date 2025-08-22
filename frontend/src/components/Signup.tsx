@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import './Auth.css';
 
 const Signup: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -28,7 +29,7 @@ const Signup: React.FC = () => {
 
     try {
       await signup(email, password);
-      setSuccess('Account created successfully! Please login.');
+      setSuccess('Account created successfully! Redirecting...');
       setTimeout(() => navigate('/login'), 2000);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Signup failed');
@@ -36,55 +37,93 @@ const Signup: React.FC = () => {
   };
 
   return (
-    <div style={{ maxWidth: '400px', margin: '50px auto', padding: '20px', border: '1px solid #ccc', borderRadius: '8px' }}>
-      <h2>Sign Up</h2>
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '15px' }}>
-          <label htmlFor="email">Email:</label>
-          <input
-            type="email"
-            id="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={{ width: '100%', padding: '8px', marginTop: '5px' }}
-          />
+    <div className="auth-wrapper">
+      <div className="auth-container">
+        <div className="auth-left">
+          <div className="auth-visual">
+            <div className="visual-card">
+              <div className="visual-title">YOUR</div>
+              <div className="visual-subtitle">PRODUCT</div>
+              <div className="visual-subtitle">JOURNEY</div>
+              <div className="visual-year">BEGINS HERE</div>
+            </div>
+          </div>
         </div>
-        <div style={{ marginBottom: '15px' }}>
-          <label htmlFor="password">Password:</label>
-          <input
-            type="password"
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={{ width: '100%', padding: '8px', marginTop: '5px' }}
-          />
+        
+        <div className="auth-right">
+          <button 
+            onClick={() => navigate('/')} 
+            className="close-button"
+            aria-label="Close"
+          >
+            ×
+          </button>
+          
+          <div className="auth-form-container">
+            <div className="form-header">
+              <h1 className="form-title">Create Account</h1>
+            </div>
+            
+            <form onSubmit={handleSubmit} className="auth-form">
+              <div className="form-group">
+                <label htmlFor="email" className="form-label">Email:</label>
+                <input
+                  type="email"
+                  id="email"
+                  className="form-control"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email address"
+                  required
+                />
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="password" className="form-label">Password:</label>
+                <input
+                  type="password"
+                  id="password"
+                  className="form-control"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Create a password (min 6 characters)"
+                  required
+                />
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="confirmPassword" className="form-label">Confirm Password:</label>
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  className="form-control"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm your password"
+                  required
+                />
+              </div>
+              
+              {error && <div className="alert alert-error">{error}</div>}
+              {success && <div className="alert alert-success">{success}</div>}
+              
+              <button 
+                type="submit" 
+                disabled={isLoading}
+                className="auth-submit"
+              >
+                {isLoading ? 'CREATING ACCOUNT...' : 'CREATE ACCOUNT'}
+              </button>
+            </form>
+            
+            <div className="auth-footer">
+              <p>
+                Already have an account? <Link to="/login" className="auth-link">Sign in</Link>
+              </p>
+            </div>
+          </div>
         </div>
-        <div style={{ marginBottom: '15px' }}>
-          <label htmlFor="confirmPassword">Confirm Password:</label>
-          <input
-            type="password"
-            id="confirmPassword"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-            style={{ width: '100%', padding: '8px', marginTop: '5px' }}
-          />
-        </div>
-        {error && <div style={{ color: 'red', marginBottom: '15px' }}>{error}</div>}
-        {success && <div style={{ color: 'green', marginBottom: '15px' }}>{success}</div>}
-        <button 
-          type="submit" 
-          disabled={isLoading}
-          style={{ width: '100%', padding: '10px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px' }}
-        >
-          {isLoading ? 'Creating account...' : 'Sign Up'}
-        </button>
-      </form>
-      <p style={{ textAlign: 'center', marginTop: '20px' }}>
-        Already have an account? <Link to="/login">Login</Link>
-      </p>
+      </div>
     </div>
   );
 };

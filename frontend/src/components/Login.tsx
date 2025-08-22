@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import './Auth.css';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -22,43 +23,79 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div style={{ maxWidth: '400px', margin: '50px auto', padding: '20px', border: '1px solid #ccc', borderRadius: '8px' }}>
-      <h2>Login</h2>
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '15px' }}>
-          <label htmlFor="email">Email:</label>
-          <input
-            type="email"
-            id="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={{ width: '100%', padding: '8px', marginTop: '5px' }}
-          />
+    <div className="auth-wrapper">
+      <div className="auth-container">
+        <div className="auth-left">
+          <div className="auth-visual">
+            <div className="visual-card">
+              <div className="visual-title">YOUR</div>
+              <div className="visual-subtitle">PRODUCT</div>
+              <div className="visual-subtitle">JOURNEY</div>
+              <div className="visual-year">BEGINS HERE</div>
+            </div>
+          </div>
         </div>
-        <div style={{ marginBottom: '15px' }}>
-          <label htmlFor="password">Password:</label>
-          <input
-            type="password"
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={{ width: '100%', padding: '8px', marginTop: '5px' }}
-          />
+        
+        <div className="auth-right">
+          <button 
+            onClick={() => navigate('/')} 
+            className="close-button"
+            aria-label="Close"
+          >
+            ×
+          </button>
+          
+          <div className="auth-form-container">
+            <div className="form-header">
+              <h1 className="form-title">Sign In</h1>
+            </div>
+            
+            <form onSubmit={handleSubmit} className="auth-form">
+              <div className="form-group">
+                <label htmlFor="email" className="form-label">Email:</label>
+                <input
+                  type="email"
+                  id="email"
+                  className="form-control"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email address"
+                  required
+                />
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="password" className="form-label">Password:</label>
+                <input
+                  type="password"
+                  id="password"
+                  className="form-control"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  required
+                />
+              </div>
+              
+              {error && <div className="alert alert-error">{error}</div>}
+              
+              <button 
+                type="submit" 
+                disabled={isLoading}
+                className="auth-submit"
+              >
+                {isLoading ? 'SIGNING IN...' : 'SIGN IN'}
+              </button>
+            </form>
+            
+            <div className="auth-footer">
+              <p>
+                Don't have an account? <Link to="/signup" className="auth-link">Create one</Link>
+              </p>
+            </div>
+          </div>
         </div>
-        {error && <div style={{ color: 'red', marginBottom: '15px' }}>{error}</div>}
-        <button 
-          type="submit" 
-          disabled={isLoading}
-          style={{ width: '100%', padding: '10px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px' }}
-        >
-          {isLoading ? 'Logging in...' : 'Login'}
-        </button>
-      </form>
-      <p style={{ textAlign: 'center', marginTop: '20px' }}>
-        Don't have an account? <Link to="/signup">Sign up</Link>
-      </p>
+      </div>
     </div>
   );
 };

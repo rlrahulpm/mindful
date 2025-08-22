@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { productService } from '../services/productService';
 import { Product } from '../types/product';
+import './Dashboard.css';
 
 const Dashboard: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -9,11 +11,31 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isAddingProduct, setIsAddingProduct] = useState(false);
-  const { user, logout } = useAuth();
+  const [showAddForm, setShowAddForm] = useState(false);
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadProducts();
   }, []);
+
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && showAddForm) {
+        setShowAddForm(false);
+      }
+    };
+
+    if (showAddForm) {
+      document.addEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
+  }, [showAddForm]);
 
   const loadProducts = async () => {
     try {
@@ -37,6 +59,7 @@ const Dashboard: React.FC = () => {
       const newProduct = await productService.createProduct({ productName: newProductName });
       setProducts([...products, newProduct]);
       setNewProductName('');
+      setShowAddForm(false); // Hide form after successful addition
     } catch (err: any) {
       setError('Failed to add product');
       console.error(err);
@@ -56,80 +79,106 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div style={{ maxWidth: '800px', margin: '20px auto', padding: '20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-        <h1>Product Management Dashboard</h1>
+    <div className="dashboard-container">
+      <div className="dashboard-header">
         <div>
-          <span style={{ marginRight: '15px' }}>Welcome, {user?.email}</span>
-          <button 
-            onClick={logout}
-            style={{ padding: '8px 15px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '4px' }}
-          >
-            Logout
-          </button>
+          <h1 className="dashboard-title">Product Dashboard</h1>
+          <p className="dashboard-subtitle">Manage your product inventory</p>
         </div>
-      </div>
-
-      <div style={{ marginBottom: '30px', padding: '20px', border: '1px solid #ccc', borderRadius: '8px' }}>
-        <h3>Add New Product</h3>
-        <form onSubmit={handleAddProduct} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <input
-            type="text"
-            value={newProductName}
-            onChange={(e) => setNewProductName(e.target.value)}
-            placeholder="Enter product name"
-            required
-            style={{ flex: 1, padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }}
-          />
+        {user?.isSuperadmin && (
           <button 
-            type="submit" 
-            disabled={isAddingProduct}
-            style={{ 
-              padding: '10px 20px', 
-              backgroundColor: '#007bff', 
-              color: 'white', 
-              border: 'none', 
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
+            onClick={() => setShowAddForm(true)}
+            className="btn btn-primary add-product-btn"
           >
-            {isAddingProduct ? 'Adding...' : 'Add Product'}
+            Add Product
           </button>
-        </form>
+        )}
       </div>
 
-      <div>
-        <h3>Your Products</h3>
-        {error && <div style={{ color: 'red', marginBottom: '15px' }}>{error}</div>}
+      {showAddForm && (
+        <div className="modal-overlay" onClick={() => setShowAddForm(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="modal-title">Add New Product</h3>
+              <button 
+                onClick={() => setShowAddForm(false)}
+                className="modal-close-btn"
+                aria-label="Close modal"
+              >
+                ×
+              </button>
+            </div>
+            <form onSubmit={handleAddProduct} className="modal-form">
+              <div className="form-group">
+                <label htmlFor="productName" className="form-label">Product Name</label>
+                <input
+                  type="text"
+                  id="productName"
+                  value={newProductName}
+                  onChange={(e) => setNewProductName(e.target.value)}
+                  placeholder="Enter product name"
+                  required
+                  className="form-control"
+                />
+              </div>
+              <div className="modal-actions">
+                <button 
+                  type="button"
+                  onClick={() => setShowAddForm(false)}
+                  className="btn btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isAddingProduct}
+                  className="btn btn-primary"
+                >
+                  {isAddingProduct ? 'Adding...' : 'Add Product'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      <div className="products-section">
+        <h3 className="section-title">Your Products</h3>
+        {error && <div className="alert alert-error">{error}</div>}
         
         {loading ? (
-          <div>Loading products...</div>
+          <div className="loading-state">
+            <div className="spinner"></div>
+            <p>Loading products...</p>
+          </div>
         ) : products.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
-            No products found. Add your first product above!
+          <div className="empty-state">
+            <svg className="empty-icon" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <h4>No products yet</h4>
+            <p>Add your first product to get started!</p>
           </div>
         ) : (
-          <div style={{ display: 'grid', gap: '15px' }}>
+          <div className="products-grid">
             {products.map((product) => (
               <div 
                 key={product.productId} 
-                style={{ 
-                  padding: '15px', 
-                  border: '1px solid #ddd', 
-                  borderRadius: '8px', 
-                  backgroundColor: '#f9f9f9' 
-                }}
+                className="product-card clickable"
+                onClick={() => navigate(`/products/${product.productId}/modules`)}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <h4 style={{ margin: '0 0 5px 0', color: '#333' }}>{product.productName}</h4>
-                    <small style={{ color: '#666' }}>
-                      Created: {formatDate(product.createdAt)}
-                    </small>
-                  </div>
-                  <div style={{ color: '#007bff', fontWeight: 'bold' }}>
-                    ID: {product.productId}
-                  </div>
+                <div className="product-header">
+                  <h4 className="product-name">{product.productName}</h4>
+                  <span className="product-id">#{product.productId}</span>
+                </div>
+                <div className="product-meta">
+                  <span className="product-date">
+                    Created {formatDate(product.createdAt)}
+                  </span>
+                </div>
+                <div className="product-action">
+                  <span className="action-text">Click to view modules →</span>
                 </div>
               </div>
             ))}

@@ -141,7 +141,8 @@ const ProductModules: React.FC = () => {
             <div className="module-icon">
               <span className="material-icons">
                 {productModule.module.name === 'Product Basics' ? 'assignment' : 
-                 productModule.module.name === 'Market & Competition Analysis' ? 'analytics' : 'extension'}
+                 productModule.module.name === 'Market & Competition Analysis' ? 'analytics' :
+                 productModule.module.name === 'Product Hypothesis' ? 'lightbulb' : 'extension'}
               </span>
             </div>
             <div className="module-content">
@@ -157,6 +158,8 @@ const ProductModules: React.FC = () => {
                     navigate(`/products/${productId}/modules/basics`);
                   } else if (productModule.module.name === 'Market & Competition Analysis') {
                     navigate(`/products/${productId}/modules/market-competition`);
+                  } else if (productModule.module.name === 'Product Hypothesis') {
+                    navigate(`/products/${productId}/modules/hypothesis`);
                   } else {
                     console.log('Viewing module:', productModule.module.name);
                   }

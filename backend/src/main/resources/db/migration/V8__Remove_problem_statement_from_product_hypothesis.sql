@@ -1,0 +1,1 @@
+ALTER TABLE product_hypothesis DROP COLUMN problem_statement;

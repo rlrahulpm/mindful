@@ -8,6 +8,7 @@ import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import ProductModules from './components/ProductModules';
 import ProductBasics from './components/ProductBasics';
+import MarketCompetition from './components/MarketCompetition';
 import AdminDashboard from './components/AdminDashboard';
 import './App.css';
 
@@ -41,6 +42,14 @@ function App() {
               element={
                 <PrivateRoute>
                   <ProductBasics />
+                </PrivateRoute>
+              } 
+            />
+            <Route 
+              path="/products/:productId/modules/market-competition" 
+              element={
+                <PrivateRoute>
+                  <MarketCompetition />
                 </PrivateRoute>
               } 
             />

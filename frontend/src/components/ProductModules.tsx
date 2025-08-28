@@ -122,7 +122,8 @@ const ProductModules: React.FC = () => {
         className="back-button"
         aria-label="Back to dashboard"
       >
-        ← Back
+        <span className="material-icons">arrow_back</span>
+        Back
       </button>
       <div className="modules-header">
         <div className="product-info">
@@ -138,34 +139,30 @@ const ProductModules: React.FC = () => {
             className={`module-card ${productModule.isEnabled ? 'enabled' : 'disabled'}`}
           >
             <div className="module-icon">
-              {productModule.module.icon}
+              <span className="material-icons">
+                {productModule.module.name === 'Product Basics' ? 'assignment' : 
+                 productModule.module.name === 'Market & Competition Analysis' ? 'analytics' : 'extension'}
+              </span>
             </div>
             <div className="module-content">
               <h3 className="module-name">{productModule.module.name}</h3>
               <p className="module-description">{productModule.module.description}</p>
-              
-              <div className="module-progress">
-                <div className="progress-bar">
-                  <div 
-                    className="progress-fill" 
-                    style={{ width: `${productModule.completionPercentage}%` }}
-                  ></div>
-                </div>
-                <span className="progress-text">
-                  {productModule.completionPercentage}% Complete
-                </span>
-              </div>
             </div>
             
             <div className="module-actions">
               <button 
-                className="btn btn-primary start-btn"
+                className="view-btn"
                 onClick={() => {
-                  // TODO: Navigate to module detail page
-                  console.log('Starting module:', productModule.module.name);
+                  if (productModule.module.name === 'Product Basics') {
+                    navigate(`/products/${productId}/modules/basics`);
+                  } else if (productModule.module.name === 'Market & Competition Analysis') {
+                    navigate(`/products/${productId}/modules/market-competition`);
+                  } else {
+                    console.log('Viewing module:', productModule.module.name);
+                  }
                 }}
               >
-                Start
+                View
               </button>
             </div>
           </div>
@@ -174,7 +171,9 @@ const ProductModules: React.FC = () => {
 
       {filteredModules.length === 0 && !loading && (
         <div className="empty-state">
-          <div className="empty-icon">📋</div>
+          <div className="empty-icon">
+            <span className="material-icons">assignment</span>
+          </div>
           <h3>No modules available</h3>
           <p>This product doesn't have any modules configured yet.</p>
         </div>

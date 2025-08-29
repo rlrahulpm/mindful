@@ -108,7 +108,7 @@ const ProductModules: React.FC = () => {
           <h2>Error</h2>
           <p>{error}</p>
           <button onClick={() => navigate('/dashboard')} className="btn btn-primary">
-            Back to Dashboard
+            <span className="material-icons">arrow_back</span>
           </button>
         </div>
       </div>
@@ -117,18 +117,18 @@ const ProductModules: React.FC = () => {
 
   return (
     <div className="modules-container">
-      <button 
-        onClick={() => navigate('/dashboard')} 
-        className="back-button"
-        aria-label="Back to dashboard"
-      >
-        <span className="material-icons">arrow_back</span>
-        Back
-      </button>
-      <div className="modules-header">
-        <div className="product-info">
-          <h1 className="product-title">{product?.productName}</h1>
-          <p className="product-subtitle">Product Modules</p>
+      <div className="page-header">
+        <div className="header-top-row">
+          <div className="header-left">
+            <button 
+              onClick={() => navigate('/dashboard')} 
+              className="back-button"
+              aria-label="Back to dashboard"
+            >
+              <span className="material-icons">arrow_back</span>
+            </button>
+            <h1 className="page-title">Product Modules</h1>
+          </div>
         </div>
       </div>
 
@@ -160,6 +160,8 @@ const ProductModules: React.FC = () => {
                     navigate(`/products/${productId}/modules/market-competition`);
                   } else if (productModule.module.name === 'Product Hypothesis') {
                     navigate(`/products/${productId}/modules/hypothesis`);
+                  } else if (productModule.module.name === 'Product Backlog') {
+                    navigate(`/products/${productId}/modules/backlog`);
                   } else {
                     console.log('Viewing module:', productModule.module.name);
                   }

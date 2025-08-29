@@ -10,6 +10,7 @@ import ProductModules from './components/ProductModules';
 import ProductBasics from './components/ProductBasics';
 import MarketCompetition from './components/MarketCompetition';
 import ProductHypothesis from './components/ProductHypothesis';
+import ProductBacklog from './components/ProductBacklog';
 import AdminDashboard from './components/AdminDashboard';
 import './App.css';
 
@@ -59,6 +60,14 @@ function App() {
               element={
                 <PrivateRoute>
                   <ProductHypothesis />
+                </PrivateRoute>
+              } 
+            />
+            <Route 
+              path="/products/:productId/modules/backlog" 
+              element={
+                <PrivateRoute>
+                  <ProductBacklog />
                 </PrivateRoute>
               } 
             />

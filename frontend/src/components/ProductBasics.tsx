@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { productService } from '../services/productService';
-import { Product } from '../types/product';
+import { useProduct } from '../hooks/useProduct';
 import './ProductBasics.css';
 
 interface ProductBasicsData {
@@ -27,13 +26,13 @@ interface Goal {
 }
 
 const ProductBasics: React.FC = () => {
-  const { productId } = useParams<{ productId: string }>();
+  const { productSlug } = useParams<{ productSlug: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { product, loading: productLoading, error: productError } = useProduct(productSlug);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [product, setProduct] = useState<Product | null>(null);
   const [productBasics, setProductBasics] = useState<ProductBasicsData>({
-    productId: parseInt(productId!, 10),
+    productId: 0,
     vision: '',
     targetPersonas: '',
     goals: ''
@@ -47,23 +46,23 @@ const ProductBasics: React.FC = () => {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (productId) {
-      loadProductAndBasics();
-    }
-  }, [productId]);
+    window.scrollTo(0, 0);
+  }, []);
 
-  const loadProductAndBasics = async () => {
+  useEffect(() => {
+    if (product && product.productId) {
+      loadBasicsData();
+      setProductBasics(prev => ({ ...prev, productId: product.productId }));
+    }
+  }, [product]);
+
+  const loadBasicsData = async () => {
+    if (!product?.productId) return;
+    
     try {
       setLoading(true);
-      const productIdNum = parseInt(productId!, 10);
+      const basicsData = await loadProductBasics(product.productId);
       
-      // Load product details and basics data in parallel
-      const [productData, basicsData] = await Promise.all([
-        productService.getProduct(productIdNum),
-        loadProductBasics(productIdNum)
-      ]);
-      
-      setProduct(productData);
       if (basicsData) {
         setProductBasics(basicsData);
         // Parse personas from the targetPersonas string if it exists
@@ -188,7 +187,7 @@ const ProductBasics: React.FC = () => {
       setError('');
       setSuccessMessage('');
 
-      const response = await fetch(`http://localhost:8080/api/products/${productId}/basics`, {
+      const response = await fetch(`http://localhost:8080/api/products/${product?.productId}/basics`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -220,7 +219,7 @@ const ProductBasics: React.FC = () => {
     }
   };
 
-  if (loading) {
+  if (loading || productLoading) {
     return (
       <div className="product-basics-container">
         <div className="loading-state">
@@ -231,13 +230,13 @@ const ProductBasics: React.FC = () => {
     );
   }
 
-  if (error && !product) {
+  if ((error && !product) || productError) {
     return (
       <div className="product-basics-container">
         <div className="error-state">
           <h2>Error</h2>
-          <p>{error}</p>
-          <button onClick={() => navigate(`/products/${productId}/modules`)} className="btn btn-primary">
+          <p>{error || productError}</p>
+          <button onClick={() => navigate(`/products/${productSlug}/modules`)} className="btn btn-primary">
             Back to Modules
           </button>
         </div>
@@ -249,14 +248,16 @@ const ProductBasics: React.FC = () => {
     <div className="product-basics-container">
       <div className="page-header">
         <div className="header-top-row">
-          <button 
-            onClick={() => navigate(`/products/${productId}/modules`)} 
-            className="back-button"
-            aria-label="Back to modules"
-          >
-            <span className="material-icons">arrow_back</span>
-            Back to Modules
-          </button>
+          <div className="header-left">
+            <button 
+              onClick={() => navigate(`/products/${productSlug}/modules`)} 
+              className="back-button"
+              aria-label="Back to modules"
+            >
+              <span className="material-icons">arrow_back</span>
+            </button>
+            <h1 className="page-title">Product Basics</h1>
+          </div>
 
           {!loading && !isEditMode && (
             <button
@@ -279,16 +280,6 @@ const ProductBasics: React.FC = () => {
               Cancel
             </button>
           )}
-        </div>
-
-        <div className="header-content">
-          <h1 className="module-title">Product Basics</h1>
-          <p className="module-subtitle">
-            <span className="product-name">{product?.productName}</span>
-          </p>
-          <p className="module-description">
-            {isEditMode ? 'Define your product fundamentals' : 'View your product fundamentals'}
-          </p>
         </div>
       </div>
 

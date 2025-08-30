@@ -1,0 +1,114 @@
+package com.productapp.entity;
+
+import jakarta.persistence.*;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Entity
+@Table(name = "quarterly_roadmap")
+public class QuarterlyRoadmap {
+    
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    
+    @Column(name = "product_id", nullable = false)
+    private Long productId;
+    
+    @Column(name = "year", nullable = false)
+    private Integer year;
+    
+    @Column(name = "quarter", nullable = false)
+    private Integer quarter;
+    
+    @Column(name = "roadmap_items", columnDefinition = "TEXT")
+    private String roadmapItems;
+    
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+    
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+    
+    public QuarterlyRoadmap() {
+    }
+    
+    public QuarterlyRoadmap(Long id, Long productId, Integer year, Integer quarter, String roadmapItems, LocalDateTime createdAt, LocalDateTime updatedAt) {
+        this.id = id;
+        this.productId = productId;
+        this.year = year;
+        this.quarter = quarter;
+        this.roadmapItems = roadmapItems;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+    }
+    
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+    
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+    
+    // Getters and Setters
+    public Long getId() {
+        return id;
+    }
+    
+    public void setId(Long id) {
+        this.id = id;
+    }
+    
+    public Long getProductId() {
+        return productId;
+    }
+    
+    public void setProductId(Long productId) {
+        this.productId = productId;
+    }
+    
+    public Integer getYear() {
+        return year;
+    }
+    
+    public void setYear(Integer year) {
+        this.year = year;
+    }
+    
+    public Integer getQuarter() {
+        return quarter;
+    }
+    
+    public void setQuarter(Integer quarter) {
+        this.quarter = quarter;
+    }
+    
+    public String getRoadmapItems() {
+        return roadmapItems;
+    }
+    
+    public void setRoadmapItems(String roadmapItems) {
+        this.roadmapItems = roadmapItems;
+    }
+    
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+    
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+    
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+    
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+}

@@ -23,6 +23,7 @@ import com.productapp.repository.ModuleRepository;
 import com.productapp.repository.UserRepository;
 import com.productapp.repository.RoleRepository;
 import com.productapp.security.UserPrincipal;
+import com.productapp.util.SlugUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import jakarta.validation.Valid;
@@ -90,9 +91,11 @@ public class ProductController {
             logger.info("Created product-module association: Product ID {} with Module ID {}", savedProduct.getId(), module.getId());
         }
         
-        return ResponseEntity.ok(new ProductResponse(savedProduct.getId(), 
-                                                   savedProduct.getProductName(), 
-                                                   savedProduct.getCreatedAt()));
+        ProductResponse response = new ProductResponse(savedProduct.getId(), 
+                                                       savedProduct.getProductName(), 
+                                                       savedProduct.getCreatedAt());
+        response.setSlug(SlugUtil.toSlug(savedProduct.getProductName()));
+        return ResponseEntity.ok(response);
     }
     
     @GetMapping
@@ -139,14 +142,81 @@ public class ProductController {
         
         // Convert to response DTOs
         List<ProductResponse> productResponses = accessibleProducts.stream()
-                .map(product -> new ProductResponse(product.getId(), 
-                                                  product.getProductName(), 
-                                                  product.getCreatedAt()))
+                .map(product -> {
+                    ProductResponse resp = new ProductResponse(product.getId(), 
+                                                               product.getProductName(), 
+                                                               product.getCreatedAt());
+                    resp.setSlug(SlugUtil.toSlug(product.getProductName()));
+                    return resp;
+                })
                 .sorted((a, b) -> a.getProductName().compareToIgnoreCase(b.getProductName()))
                 .collect(Collectors.toList());
         
         logger.info("Returning total of {} accessible products for user ID: {}", productResponses.size(), userPrincipal.getId());
         return ResponseEntity.ok(productResponses);
+    }
+    
+    @GetMapping("/by-slug/{slug}")
+    @Operation(summary = "Get product by slug", description = "Get a specific product by its URL slug")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Product retrieved successfully",
+                content = @Content(schema = @Schema(implementation = ProductResponse.class))),
+        @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+        @ApiResponse(responseCode = "403", description = "Forbidden - No access to this product", content = @Content),
+        @ApiResponse(responseCode = "404", description = "Product not found", content = @Content)
+    })
+    public ResponseEntity<?> getProductBySlug(
+            @Parameter(description = "Product slug", required = true)
+            @PathVariable String slug, 
+            Authentication authentication) {
+        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+        logger.info("Fetching product by slug: {} for user ID: {}", slug, userPrincipal.getId());
+        
+        // Get user for organization ID
+        User user = userRepository.findById(userPrincipal.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userPrincipal.getId()));
+        
+        // Find product by name (case-insensitive) and organization
+        String productName = SlugUtil.fromSlug(slug);
+        Product product = productRepository.findByProductNameAndOrganizationId(productName, user.getOrganization().getId())
+                .orElseGet(() -> {
+                    // Try case-insensitive search
+                    List<Product> products = productRepository.findByOrganizationId(user.getOrganization().getId());
+                    return products.stream()
+                            .filter(p -> p.getProductName().equalsIgnoreCase(productName))
+                            .findFirst()
+                            .orElseThrow(() -> new ResourceNotFoundException("Product", "slug", slug));
+                });
+        
+        // Check if user has access to this product
+        boolean hasAccess = false;
+        
+        // Check if user owns the product
+        if (product.getUser().getId().equals(userPrincipal.getId())) {
+            hasAccess = true;
+            logger.info("User owns product: {}", product.getProductName());
+        }
+        // Check if user has role-based access to the product
+        else if (user.getRole() != null) {
+            hasAccess = user.getRole().getProductModules().stream()
+                    .anyMatch(pm -> pm.getProduct().getId().equals(product.getId()));
+            if (hasAccess) {
+                logger.info("User has role-based access to product: {}", product.getProductName());
+            }
+        }
+        
+        if (!hasAccess) {
+            logger.warn("Unauthorized access attempt - User ID: {} tried to access product: {}", 
+                       userPrincipal.getId(), product.getProductName());
+            throw new UnauthorizedException("You are not authorized to access this product");
+        }
+        
+        logger.info("Product '{}' fetched successfully for user ID: {}", product.getProductName(), userPrincipal.getId());
+        ProductResponse response = new ProductResponse(product.getId(), 
+                                                       product.getProductName(), 
+                                                       product.getCreatedAt());
+        response.setSlug(SlugUtil.toSlug(product.getProductName()));
+        return ResponseEntity.ok(response);
     }
     
     @GetMapping("/{id}")
@@ -195,9 +265,11 @@ public class ProductController {
         }
         
         logger.info("Product ID: {} fetched successfully for user ID: {}", id, userPrincipal.getId());
-        return ResponseEntity.ok(new ProductResponse(product.getId(), 
-                                                   product.getProductName(), 
-                                                   product.getCreatedAt()));
+        ProductResponse response = new ProductResponse(product.getId(), 
+                                                       product.getProductName(), 
+                                                       product.getCreatedAt());
+        response.setSlug(SlugUtil.toSlug(product.getProductName()));
+        return ResponseEntity.ok(response);
     }
     
     @PutMapping("/{id}")
@@ -230,9 +302,11 @@ public class ProductController {
         Product updatedProduct = productRepository.save(product);
         logger.info("Product ID: {} updated successfully for user ID: {}", id, userPrincipal.getId());
         
-        return ResponseEntity.ok(new ProductResponse(updatedProduct.getId(), 
-                                                   updatedProduct.getProductName(), 
-                                                   updatedProduct.getCreatedAt()));
+        ProductResponse response = new ProductResponse(updatedProduct.getId(), 
+                                                       updatedProduct.getProductName(), 
+                                                       updatedProduct.getCreatedAt());
+        response.setSlug(SlugUtil.toSlug(updatedProduct.getProductName()));
+        return ResponseEntity.ok(response);
     }
     
     @DeleteMapping("/{id}")

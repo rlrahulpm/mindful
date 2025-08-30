@@ -61,7 +61,7 @@
 }
 
 .product-title {
-  font-size: 2.5rem;
+  font-size: 1.8rem;
   color: var(--black);
   margin-bottom: 8px;
   font-weight: 700;
@@ -192,7 +192,7 @@
 
 .section-title {
   color: var(--black);
-  font-size: 1.75rem;
+  font-size: 1.4rem;
   margin: 0;
   font-weight: 700;
 }
@@ -463,7 +463,7 @@
 }
 
 .user-avatar .material-icons {
-  font-size: 36px;
+  font-size: 28px;
   color: var(--blue-dark);
 }
 
@@ -541,7 +541,7 @@
 }
 
 .empty-state .material-icons {
-  font-size: 64px;
+  font-size: 48px;
   color: var(--gray-light);
   margin-bottom: 16px;
   display: block;
@@ -607,7 +607,7 @@
 }
 
 .modal-title {
-  font-size: 1.75rem;
+  font-size: 1.4rem;
   font-weight: 700;
   color: var(--black);
   margin: 0 0 8px 0;
@@ -959,7 +959,7 @@
 
 @media (max-width: 480px) {
   .product-title {
-    font-size: 1.75rem;
+    font-size: 1.4rem;
   }
   
   .back-button {

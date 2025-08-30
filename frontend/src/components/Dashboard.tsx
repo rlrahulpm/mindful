@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { productService } from '../services/productService';
 import { Product } from '../types/product';
+import { toSlug } from '../utils/productUtils';
 import './Dashboard.css';
 
 const Dashboard: React.FC = () => {
@@ -166,11 +167,10 @@ const Dashboard: React.FC = () => {
               <div 
                 key={product.productId} 
                 className="product-card clickable"
-                onClick={() => navigate(`/products/${product.productId}/modules`)}
+                onClick={() => navigate(`/products/${product.slug || toSlug(product.productName)}/modules`)}
               >
                 <div className="product-header">
                   <h4 className="product-name">{product.productName}</h4>
-                  <span className="product-id">#{product.productId}</span>
                 </div>
                 <div className="product-meta">
                   <span className="product-date">

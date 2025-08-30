@@ -1,27 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ProductModule } from '../types/module';
-import { Product } from '../types/product';
 import { moduleService } from '../services/moduleService';
-import { productService } from '../services/productService';
 import { useAuth } from '../context/AuthContext';
+import { useProduct } from '../hooks/useProduct';
 import './ProductModules.css';
 
 const ProductModules: React.FC = () => {
-  const { productId } = useParams<{ productId: string }>();
+  const { productSlug } = useParams<{ productSlug: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [product, setProduct] = useState<Product | null>(null);
+  const { product, loading: productLoading, error: productError } = useProduct(productSlug);
   const [modules, setModules] = useState<ProductModule[]>([]);
   const [filteredModules, setFilteredModules] = useState<ProductModule[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (productId) {
-      loadProductAndModules();
+    if (product) {
+      loadModules();
     }
-  }, [productId]);
+  }, [product]);
 
   useEffect(() => {
     if (user && modules.length > 0) {
@@ -29,18 +28,12 @@ const ProductModules: React.FC = () => {
     }
   }, [user, modules]);
 
-  const loadProductAndModules = async () => {
+  const loadModules = async () => {
+    if (!product) return;
+    
     try {
       setLoading(true);
-      const productIdNum = parseInt(productId!, 10);
-      
-      // Load product details and modules in parallel
-      const [productData, modulesData] = await Promise.all([
-        productService.getProduct(productIdNum),
-        moduleService.getProductModules(productIdNum)
-      ]);
-      
-      setProduct(productData);
+      const modulesData = await moduleService.getProductModules(product.productId);
       setModules(modulesData);
     } catch (err: any) {
       setError('Failed to load product modules');
@@ -90,7 +83,7 @@ const ProductModules: React.FC = () => {
   };
 
 
-  if (loading) {
+  if (loading || productLoading) {
     return (
       <div className="modules-container">
         <div className="loading-state">
@@ -101,12 +94,12 @@ const ProductModules: React.FC = () => {
     );
   }
 
-  if (error) {
+  if (error || productError) {
     return (
       <div className="modules-container">
         <div className="error-state">
           <h2>Error</h2>
-          <p>{error}</p>
+          <p>{error || productError}</p>
           <button onClick={() => navigate('/dashboard')} className="btn btn-primary">
             <span className="material-icons">arrow_back</span>
           </button>
@@ -142,7 +135,9 @@ const ProductModules: React.FC = () => {
               <span className="material-icons">
                 {productModule.module.name === 'Product Basics' ? 'assignment' : 
                  productModule.module.name === 'Market & Competition Analysis' ? 'analytics' :
-                 productModule.module.name === 'Product Hypothesis' ? 'lightbulb' : 'extension'}
+                 productModule.module.name === 'Product Hypothesis' ? 'lightbulb' :
+                 productModule.module.name === 'Product Backlog' ? 'list_alt' :
+                 productModule.module.name === 'Roadmap Planner' ? 'timeline' : 'extension'}
               </span>
             </div>
             <div className="module-content">
@@ -154,14 +149,17 @@ const ProductModules: React.FC = () => {
               <button 
                 className="view-btn"
                 onClick={() => {
+                  window.scrollTo(0, 0);
                   if (productModule.module.name === 'Product Basics') {
-                    navigate(`/products/${productId}/modules/basics`);
+                    navigate(`/products/${productSlug}/modules/basics`);
                   } else if (productModule.module.name === 'Market & Competition Analysis') {
-                    navigate(`/products/${productId}/modules/market-competition`);
+                    navigate(`/products/${productSlug}/modules/market-competition`);
                   } else if (productModule.module.name === 'Product Hypothesis') {
-                    navigate(`/products/${productId}/modules/hypothesis`);
+                    navigate(`/products/${productSlug}/modules/hypothesis`);
                   } else if (productModule.module.name === 'Product Backlog') {
-                    navigate(`/products/${productId}/modules/backlog`);
+                    navigate(`/products/${productSlug}/modules/backlog`);
+                  } else if (productModule.module.name === 'Roadmap Planner') {
+                    navigate(`/products/${productSlug}/modules/roadmap`);
                   } else {
                     console.log('Viewing module:', productModule.module.name);
                   }

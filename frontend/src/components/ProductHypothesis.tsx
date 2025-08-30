@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { productService } from '../services/productService';
-import { Product } from '../types/product';
+import { useProduct } from '../hooks/useProduct';
 import './ProductHypothesis.css';
 
 interface ProductHypothesisData {
@@ -42,13 +41,13 @@ interface Assumption {
 
 
 const ProductHypothesis: React.FC = () => {
-  const { productId } = useParams<{ productId: string }>();
+  const { productSlug } = useParams<{ productSlug: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { product, loading: productLoading, error: productError } = useProduct(productSlug);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [product, setProduct] = useState<Product | null>(null);
   const [productHypothesis, setProductHypothesis] = useState<ProductHypothesisData>({
-    productId: parseInt(productId!, 10),
+    productId: 0,
     hypothesisStatement: '',
     successMetrics: '',
     assumptions: '',
@@ -66,22 +65,19 @@ const ProductHypothesis: React.FC = () => {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (productId) {
-      loadProductAndHypothesis();
+    if (product && product.productId) {
+      loadHypothesisData();
+      setProductHypothesis(prev => ({ ...prev, productId: product.productId }));
     }
-  }, [productId]);
+  }, [product]);
 
-  const loadProductAndHypothesis = async () => {
+  const loadHypothesisData = async () => {
+    if (!product?.productId) return;
+    
     try {
       setLoading(true);
-      const productIdNum = parseInt(productId!, 10);
+      const hypothesisData = await loadProductHypothesisData(product.productId);
       
-      const [productData, hypothesisData] = await Promise.all([
-        productService.getProduct(productIdNum),
-        loadProductHypothesisData(productIdNum)
-      ]);
-      
-      setProduct(productData);
       if (hypothesisData) {
         setProductHypothesis(hypothesisData);
         
@@ -238,7 +234,7 @@ const ProductHypothesis: React.FC = () => {
       setError('');
       setSuccessMessage('');
 
-      const response = await fetch(`http://localhost:8080/api/products/${productId}/hypothesis`, {
+      const response = await fetch(`http://localhost:8080/api/products/${product?.productId}/hypothesis`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -271,7 +267,7 @@ const ProductHypothesis: React.FC = () => {
     }
   };
 
-  if (loading) {
+  if (loading || productLoading) {
     return (
       <div className="product-hypothesis-container">
         <div className="loading-state">
@@ -282,13 +278,13 @@ const ProductHypothesis: React.FC = () => {
     );
   }
 
-  if (error && !product) {
+  if ((error && !product) || productError) {
     return (
       <div className="product-hypothesis-container">
         <div className="error-state">
           <h2>Error</h2>
-          <p>{error}</p>
-          <button onClick={() => navigate(`/products/${productId}/modules`)} className="btn btn-primary">
+          <p>{error || productError}</p>
+          <button onClick={() => navigate(`/products/${productSlug}/modules`)} className="btn btn-primary">
             Back to Modules
           </button>
         </div>
@@ -300,14 +296,16 @@ const ProductHypothesis: React.FC = () => {
     <div className="product-hypothesis-container">
       <div className="page-header">
         <div className="header-top-row">
-          <button 
-            onClick={() => navigate(`/products/${productId}/modules`)} 
-            className="back-button"
-            aria-label="Back to modules"
-          >
-            <span className="material-icons">arrow_back</span>
-            Back to Modules
-          </button>
+          <div className="header-left">
+            <button 
+              onClick={() => navigate(`/products/${productSlug}/modules`)} 
+              className="back-button"
+              aria-label="Back to modules"
+            >
+              <span className="material-icons">arrow_back</span>
+            </button>
+            <h1 className="page-title">Product Hypothesis</h1>
+          </div>
 
           {!loading && !isEditMode && (
             <button
@@ -330,16 +328,6 @@ const ProductHypothesis: React.FC = () => {
               Cancel
             </button>
           )}
-        </div>
-
-        <div className="header-content">
-          <h1 className="module-title">Product Hypothesis</h1>
-          <p className="module-subtitle">
-            <span className="product-name">{product?.productName}</span>
-          </p>
-          <p className="module-description">
-            {isEditMode ? 'Define your product hypothesis with initiatives and themes' : 'View your product hypothesis and strategic initiatives'}
-          </p>
         </div>
       </div>
 

@@ -6,6 +6,7 @@ public class ProductResponse {
     private Long productId;
     private String productName;
     private LocalDateTime createdAt;
+    private String slug;
     
     public ProductResponse() {}
     
@@ -37,5 +38,13 @@ public class ProductResponse {
     
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+    
+    public String getSlug() {
+        return slug;
+    }
+    
+    public void setSlug(String slug) {
+        this.slug = slug;
     }
 }

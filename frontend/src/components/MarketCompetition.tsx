@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { productService } from '../services/productService';
-import { Product } from '../types/product';
+import { useProduct } from '../hooks/useProduct';
 import './MarketCompetition.css';
 
 interface MarketCompetitionData {
@@ -33,13 +32,13 @@ interface Trend {
 }
 
 const MarketCompetition: React.FC = () => {
-  const { productId } = useParams<{ productId: string }>();
+  const { productSlug } = useParams<{ productSlug: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isEditMode, setIsEditMode] = useState(false);
-  const [product, setProduct] = useState<Product | null>(null);
+  const { product, loading: productLoading, error: productError } = useProduct(productSlug);
   const [marketCompetition, setMarketCompetition] = useState<MarketCompetitionData>({
-    productId: parseInt(productId!, 10),
+    productId: 0,
     marketSize: '',
     marketGrowth: '',
     targetMarket: '',
@@ -56,23 +55,18 @@ const MarketCompetition: React.FC = () => {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (productId) {
-      loadProductAndMarketData();
+    if (product && product.productId) {
+      loadMarketData();
+      setMarketCompetition(prev => ({ ...prev, productId: product.productId }));
     }
-  }, [productId]);
+  }, [product]);
 
-  const loadProductAndMarketData = async () => {
+  const loadMarketData = async () => {
+    if (!product?.productId) return;
+    
     try {
       setLoading(true);
-      const productIdNum = parseInt(productId!, 10);
-      
-      // Load product details and market data in parallel
-      const [productData, marketData] = await Promise.all([
-        productService.getProduct(productIdNum),
-        loadMarketCompetitionData(productIdNum)
-      ]);
-      
-      setProduct(productData);
+      const marketData = await loadMarketCompetitionData(product.productId);
       if (marketData) {
         setMarketCompetition(marketData);
         
@@ -204,7 +198,7 @@ const MarketCompetition: React.FC = () => {
       setError('');
       setSuccessMessage('');
 
-      const response = await fetch(`http://localhost:8080/api/products/${productId}/market-competition`, {
+      const response = await fetch(`http://localhost:8080/api/products/${product?.productId}/market-competition`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -239,7 +233,7 @@ const MarketCompetition: React.FC = () => {
     }
   };
 
-  if (loading) {
+  if (loading || productLoading) {
     return (
       <div className="market-competition-container">
         <div className="loading-state">
@@ -250,13 +244,13 @@ const MarketCompetition: React.FC = () => {
     );
   }
 
-  if (error && !product) {
+  if ((error && !product) || productError) {
     return (
       <div className="market-competition-container">
         <div className="error-state">
           <h2>Error</h2>
-          <p>{error}</p>
-          <button onClick={() => navigate(`/products/${productId}/modules`)} className="btn btn-primary">
+          <p>{error || productError}</p>
+          <button onClick={() => navigate(`/products/${productSlug}/modules`)} className="btn btn-primary">
             Back to Modules
           </button>
         </div>
@@ -268,14 +262,16 @@ const MarketCompetition: React.FC = () => {
     <div className="market-competition-container">
       <div className="page-header">
         <div className="header-top-row">
-          <button 
-            onClick={() => navigate(`/products/${productId}/modules`)} 
-            className="back-button"
-            aria-label="Back to modules"
-          >
-            <span className="material-icons">arrow_back</span>
-            Back to Modules
-          </button>
+          <div className="header-left">
+            <button 
+              onClick={() => navigate(`/products/${productSlug}/modules`)} 
+              className="back-button"
+              aria-label="Back to modules"
+            >
+              <span className="material-icons">arrow_back</span>
+            </button>
+            <h1 className="page-title">Market & Competition Analysis</h1>
+          </div>
 
           {!loading && !isEditMode && (
             <button
@@ -298,16 +294,6 @@ const MarketCompetition: React.FC = () => {
               Cancel
             </button>
           )}
-        </div>
-
-        <div className="header-content">
-          <h1 className="module-title">Market & Competition Analysis</h1>
-          <p className="module-subtitle">
-            <span className="product-name">{product?.productName}</span>
-          </p>
-          <p className="module-description">
-            {isEditMode ? 'Analyze your market position, competitors, and opportunities' : 'View your market analysis and competitive landscape'}
-          </p>
         </div>
       </div>
 

@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { productService } from '../services/productService';
-import { Product } from '../types/product';
+import { useProduct } from '../hooks/useProduct';
 import './ProductBacklog.css';
 
 interface ProductBacklogData {
@@ -37,9 +36,10 @@ interface Initiative {
 }
 
 const ProductBacklog: React.FC = () => {
-  const { productId } = useParams<{ productId: string }>();
+  const { productSlug } = useParams<{ productSlug: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { product, loading: productLoading, error: productError } = useProduct(productSlug);
   const editorRef = useRef<HTMLDivElement>(null);
   const editViewEditorRef = useRef<HTMLDivElement>(null);
   const [showAddEpicModal, setShowAddEpicModal] = useState(false);
@@ -54,9 +54,8 @@ const ProductBacklog: React.FC = () => {
     initiativeName: '',
     track: 'Customer Concerns'
   });
-  const [product, setProduct] = useState<Product | null>(null);
   const [productBacklog, setProductBacklog] = useState<ProductBacklogData>({
-    productId: parseInt(productId!, 10),
+    productId: 0,
     epics: ''
   });
   
@@ -102,10 +101,11 @@ const ProductBacklog: React.FC = () => {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    if (productId) {
+    if (product && product.productId) {
       loadProductAndBacklog();
+      setProductBacklog(prev => ({ ...prev, productId: product.productId }));
     }
-  }, [productId]);
+  }, [product]);
 
 
   // Initialize editor content when modal opens
@@ -129,17 +129,15 @@ const ProductBacklog: React.FC = () => {
   }, [isEditingInViewModal]);
 
   const loadProductAndBacklog = async () => {
+    if (!product?.productId) return;
+    
     try {
       setLoading(true);
-      const productIdNum = parseInt(productId!, 10);
       
-      const [productData, backlogData, hypothesisData] = await Promise.all([
-        productService.getProduct(productIdNum),
-        loadProductBacklogData(productIdNum),
-        loadProductHypothesisData(productIdNum)
+      const [backlogData, hypothesisData] = await Promise.all([
+        loadProductBacklogData(product.productId),
+        loadProductHypothesisData(product.productId)
       ]);
-      
-      setProduct(productData);
       
       // Load themes and initiatives from hypothesis data
       if (hypothesisData) {
@@ -361,7 +359,7 @@ const ProductBacklog: React.FC = () => {
       );
 
       // Save to backend
-      const response = await fetch(`http://localhost:8080/api/products/${productId}/backlog`, {
+      const response = await fetch(`http://localhost:8080/api/products/${product?.productId}/backlog`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -435,7 +433,7 @@ const ProductBacklog: React.FC = () => {
         console.log('Using token for request:', token ? 'Token exists' : 'No token');
         
         // Save to backend
-        const response = await fetch(`http://localhost:8080/api/products/${productId}/backlog`, {
+        const response = await fetch(`http://localhost:8080/api/products/${product?.productId}/backlog`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -603,7 +601,7 @@ const ProductBacklog: React.FC = () => {
       setError('');
       setSuccessMessage('');
 
-      const response = await fetch(`http://localhost:8080/api/products/${productId}/backlog`, {
+      const response = await fetch(`http://localhost:8080/api/products/${product?.productId}/backlog`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -631,7 +629,7 @@ const ProductBacklog: React.FC = () => {
     }
   };
 
-  if (loading) {
+  if (loading || productLoading) {
     return (
       <div className="product-backlog-container">
         <div className="loading-state">
@@ -642,13 +640,13 @@ const ProductBacklog: React.FC = () => {
     );
   }
 
-  if (error && !product) {
+  if ((error && !product) || productError) {
     return (
       <div className="product-backlog-container">
         <div className="error-state">
           <h2>Error</h2>
-          <p>{error}</p>
-          <button onClick={() => navigate(`/products/${productId}/modules`)} className="btn btn-primary">
+          <p>{error || productError}</p>
+          <button onClick={() => navigate(`/products/${productSlug}/modules`)} className="btn btn-primary">
             <span className="material-icons">arrow_back</span>
           </button>
         </div>
@@ -663,7 +661,7 @@ const ProductBacklog: React.FC = () => {
           <div className="header-top-row">
             <div className="header-left">
               <button 
-                onClick={() => navigate(`/products/${productId}/modules`)} 
+                onClick={() => navigate(`/products/${productSlug}/modules`)} 
                 className="back-button"
                 aria-label="Back to modules"
               >
@@ -678,7 +676,7 @@ const ProductBacklog: React.FC = () => {
           <h3>Prerequisites Required</h3>
           <p>To create epics in the Product Backlog, you need to first define themes and initiatives in the Product Hypothesis module.</p>
           <button 
-            onClick={() => navigate(`/products/${productId}/modules/hypothesis`)} 
+            onClick={() => navigate(`/products/${productSlug}/modules/hypothesis`)} 
             className="btn btn-primary"
           >
             Go to Product Hypothesis
@@ -694,7 +692,7 @@ const ProductBacklog: React.FC = () => {
         <div className="header-top-row">
           <div className="header-left">
             <button 
-              onClick={() => navigate(`/products/${productId}/modules`)} 
+              onClick={() => navigate(`/products/${productSlug}/modules`)} 
               className="back-button"
               aria-label="Back to modules"
             >

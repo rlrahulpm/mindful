@@ -1,11 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useProduct } from '../hooks/useProduct';
 import './Navbar.css';
 
 const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const location = useLocation();
+  
+  // Extract productSlug from the URL path only when in product context
+  const getProductSlugFromPath = () => {
+    const match = location.pathname.match(/\/products\/([^\/]+)(?:\/|$)/);
+    return match ? match[1] : null;
+  };
+  
+  // Only fetch product data when we're viewing a specific product's modules or details
+  const isInSpecificProductContext = location.pathname.match(/^\/products\/[^\/]+\/modules/);
+  const productSlug = isInSpecificProductContext ? getProductSlugFromPath() : null;
+  const { product } = useProduct(productSlug || undefined);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -40,6 +53,12 @@ const Navbar: React.FC = () => {
           <span className="brand-icon">◈</span>
           <span className="brand-text">Mindful</span>
         </Link>
+        
+        {product && (
+          <div className="navbar-product-name">
+            <span className="product-name">{product.productName}</span>
+          </div>
+        )}
         
         <div className="navbar-menu">
           {user ? (

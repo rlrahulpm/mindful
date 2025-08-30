@@ -35,11 +35,31 @@
 
 .brand-icon {
   color: var(--primary-orange);
-  font-size: 1.8rem;
+  font-size: 1.5rem;
 }
 
 .brand-text {
   color: var(--black);
+}
+
+.navbar-product-name {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.product-separator {
+  color: var(--gray-light);
+  font-size: 1.2rem;
+}
+
+.navbar-product-name .product-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--primary-orange);
 }
 
 .navbar-menu {
@@ -241,6 +261,10 @@
 }
 
 @media (max-width: 768px) {
+  .navbar-product-name {
+    display: none;
+  }
+  
   .navbar-container {
     padding: 12px 15px;
   }

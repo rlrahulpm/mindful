@@ -11,6 +11,7 @@ import ProductBasics from './components/ProductBasics';
 import MarketCompetition from './components/MarketCompetition';
 import ProductHypothesis from './components/ProductHypothesis';
 import ProductBacklog from './components/ProductBacklog';
+import QuarterlyRoadmap from './components/QuarterlyRoadmap';
 import AdminDashboard from './components/AdminDashboard';
 import './App.css';
 
@@ -32,7 +33,7 @@ function App() {
               } 
             />
             <Route 
-              path="/products/:productId/modules" 
+              path="/products/:productSlug/modules" 
               element={
                 <PrivateRoute>
                   <ProductModules />
@@ -40,7 +41,7 @@ function App() {
               } 
             />
             <Route 
-              path="/products/:productId/modules/basics" 
+              path="/products/:productSlug/modules/basics" 
               element={
                 <PrivateRoute>
                   <ProductBasics />
@@ -48,7 +49,7 @@ function App() {
               } 
             />
             <Route 
-              path="/products/:productId/modules/market-competition" 
+              path="/products/:productSlug/modules/market-competition" 
               element={
                 <PrivateRoute>
                   <MarketCompetition />
@@ -56,7 +57,7 @@ function App() {
               } 
             />
             <Route 
-              path="/products/:productId/modules/hypothesis" 
+              path="/products/:productSlug/modules/hypothesis" 
               element={
                 <PrivateRoute>
                   <ProductHypothesis />
@@ -64,10 +65,18 @@ function App() {
               } 
             />
             <Route 
-              path="/products/:productId/modules/backlog" 
+              path="/products/:productSlug/modules/backlog" 
               element={
                 <PrivateRoute>
                   <ProductBacklog />
+                </PrivateRoute>
+              } 
+            />
+            <Route 
+              path="/products/:productSlug/modules/roadmap" 
+              element={
+                <PrivateRoute>
+                  <QuarterlyRoadmap />
                 </PrivateRoute>
               } 
             />

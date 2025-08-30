@@ -137,7 +137,8 @@ const ProductModules: React.FC = () => {
                  productModule.module.name === 'Market & Competition Analysis' ? 'analytics' :
                  productModule.module.name === 'Product Hypothesis' ? 'lightbulb' :
                  productModule.module.name === 'Product Backlog' ? 'list_alt' :
-                 productModule.module.name === 'Roadmap Planner' ? 'timeline' : 'extension'}
+                 productModule.module.name === 'Roadmap Planner' ? 'timeline' :
+                 productModule.module.name === 'Capacity Planning' ? 'groups' : 'extension'}
               </span>
             </div>
             <div className="module-content">
@@ -160,6 +161,8 @@ const ProductModules: React.FC = () => {
                     navigate(`/products/${productSlug}/modules/backlog`);
                   } else if (productModule.module.name === 'Roadmap Planner') {
                     navigate(`/products/${productSlug}/modules/roadmap`);
+                  } else if (productModule.module.name === 'Capacity Planning') {
+                    navigate(`/products/${productSlug}/modules/capacity-planning`);
                   } else {
                     console.log('Viewing module:', productModule.module.name);
                   }

@@ -12,6 +12,7 @@ import MarketCompetition from './components/MarketCompetition';
 import ProductHypothesis from './components/ProductHypothesis';
 import ProductBacklog from './components/ProductBacklog';
 import QuarterlyRoadmap from './components/QuarterlyRoadmap';
+import CapacityPlanning from './components/CapacityPlanning';
 import AdminDashboard from './components/AdminDashboard';
 import './App.css';
 
@@ -77,6 +78,14 @@ function App() {
               element={
                 <PrivateRoute>
                   <QuarterlyRoadmap />
+                </PrivateRoute>
+              } 
+            />
+            <Route 
+              path="/products/:productSlug/modules/capacity-planning" 
+              element={
+                <PrivateRoute>
+                  <CapacityPlanning />
                 </PrivateRoute>
               } 
             />

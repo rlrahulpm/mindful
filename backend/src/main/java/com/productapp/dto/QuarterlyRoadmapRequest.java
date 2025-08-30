@@ -64,6 +64,7 @@ public class QuarterlyRoadmapRequest {
         private Integer confidence;
         private Integer effort;
         private Double riceScore;
+        private Integer effortRating;
         
         public RoadmapItem() {
         }
@@ -178,6 +179,14 @@ public class QuarterlyRoadmapRequest {
         
         public void setRiceScore(Double riceScore) {
             this.riceScore = riceScore;
+        }
+        
+        public Integer getEffortRating() {
+            return effortRating;
+        }
+        
+        public void setEffortRating(Integer effortRating) {
+            this.effortRating = effortRating;
         }
     }
 }

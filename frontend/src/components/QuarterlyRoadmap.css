@@ -494,6 +494,10 @@
   width: 10%;
   min-width: 110px;
 }
+.col-effort-rating {
+  width: 8%;
+  min-width: 100px;
+}
 
 .col-actions {
   width: 4%;
@@ -1315,7 +1319,8 @@
   .col-rice-score,
   .col-status,
   .col-priority,
-  .col-effort {
+  .col-effort,
+  .col-effort-rating {
     min-width: 80px;
   }
   

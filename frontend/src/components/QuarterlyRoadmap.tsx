@@ -15,8 +15,8 @@ interface RoadmapItem {
   reach: number;
   impact: number;
   confidence: number;
-  effort: number;
   riceScore: number;
+  effortRating?: number; // Auto-filled from capacity planning
 }
 
 interface QuarterlyRoadmapData {
@@ -176,8 +176,7 @@ const QuarterlyRoadmap: React.FC = () => {
         const reach = existingItem?.reach || 0;
         const impact = existingItem?.impact || 0;
         const confidence = existingItem?.confidence || 0;
-        const effort = existingItem?.effort || 0;
-        const riceScore = (reach * impact * confidence) / effort;
+        const riceScore = reach * impact * confidence;
         
         return {
           epicId,
@@ -190,8 +189,8 @@ const QuarterlyRoadmap: React.FC = () => {
           reach,
           impact,
           confidence,
-          effort,
-          riceScore
+          riceScore,
+          effortRating: existingItem?.effortRating || 0
         };
       });
 
@@ -235,18 +234,59 @@ const QuarterlyRoadmap: React.FC = () => {
     
     console.log('updateRoadmapItem called:', { epicId, field, value });
     
+    // For effortRating, use the specific endpoint
+    if (field === 'effortRating') {
+      try {
+        console.log('Updating effort rating via specific endpoint:', { epicId, value });
+        const response = await fetch(
+          `http://localhost:8080/api/products/${product?.productId}/roadmap/${selectedYear}/${selectedQuarter}/epics/${epicId}/effort-rating`, 
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({
+              effortRating: value
+            })
+          }
+        );
+
+        if (response.ok) {
+          // Update local state on successful backend update
+          const updatedItems = roadmapData.roadmapItems.map(item => {
+            if (item.epicId === epicId) {
+              return { ...item, effortRating: value as number };
+            }
+            return item;
+          });
+          
+          setRoadmapData({
+            ...roadmapData,
+            roadmapItems: updatedItems
+          });
+          
+          console.log('Effort rating updated successfully');
+        } else {
+          throw new Error('Failed to update effort rating');
+        }
+      } catch (err) {
+        console.error('Error updating effort rating:', err);
+      }
+      return;
+    }
+    
     const updatedItems = roadmapData.roadmapItems.map(item => {
       if (item.epicId === epicId) {
         const updatedItem = { ...item, [field]: value };
         
         // Recalculate RICE score if any RICE component was updated
-        if (['reach', 'impact', 'confidence', 'effort'].includes(field)) {
+        if (['reach', 'impact', 'confidence'].includes(field)) {
           const reach = field === 'reach' ? value as number : updatedItem.reach || 0;
           const impact = field === 'impact' ? value as number : updatedItem.impact || 0;
           const confidence = field === 'confidence' ? value as number : updatedItem.confidence || 0;
-          const effort = field === 'effort' ? value as number : updatedItem.effort || 0;
-          updatedItem.riceScore = (reach * impact * confidence) / effort;
-          console.log('RICE recalculated:', { reach, impact, confidence, effort, riceScore: updatedItem.riceScore });
+          updatedItem.riceScore = reach * impact * confidence;
+          console.log('RICE recalculated:', { reach, impact, confidence, riceScore: updatedItem.riceScore });
         }
         
         return updatedItem;
@@ -565,11 +605,10 @@ const QuarterlyRoadmap: React.FC = () => {
                     <th className="col-reach">Reach</th>
                     <th className="col-impact">Impact</th>
                     <th className="col-confidence">Confidence</th>
-                    <th className="col-effort-rice">Effort</th>
+                    <th className="col-effort-rating">Estimated Effort</th>
                     <th className="col-rice-score">RICE Score</th>
                     <th className="col-status">Status</th>
                     <th className="col-priority">Priority</th>
-                    <th className="col-effort">Est. Effort</th>
                     {isEditMode && <th className="col-actions">Actions</th>}
                   </tr>
                 </thead>
@@ -613,25 +652,16 @@ const QuarterlyRoadmap: React.FC = () => {
                           readOnly={false}
                         />
                       </td>
-                      <td className="col-effort-rice">
-                        {isEditMode ? (
-                          <input
-                            type="number"
-                            min="1"
-                            max="10"
-                            value={item.effort || ''}
-                            onChange={(e) => updateRoadmapItem(item.epicId, 'effort', parseInt(e.target.value) || 0)}
-                            placeholder="1-10"
-                            className="rice-input-table"
-                          />
-                        ) : (
-                          <span className="rice-display">{item.effort || '-'}</span>
-                        )}
+                      <td className="col-effort-rating">
+                        <StarRating
+                          value={item.effortRating || 0}
+                          readOnly={true}
+                        />
                       </td>
                       <td className="col-rice-score">
                         <span className="rice-score-display">
-                          {item.reach && item.impact && item.confidence && item.effort 
-                            ? ((item.reach * item.impact * item.confidence) / item.effort).toFixed(1)
+                          {item.reach && item.impact && item.confidence 
+                            ? (item.reach * item.impact * item.confidence).toFixed(1)
                             : '-'
                           }
                         </span>
@@ -668,19 +698,6 @@ const QuarterlyRoadmap: React.FC = () => {
                           </select>
                         ) : (
                           <span className={`priority-badge ${item.priority.toLowerCase()}`}>{item.priority}</span>
-                        )}
-                      </td>
-                      <td className="col-effort">
-                        {isEditMode ? (
-                          <input
-                            type="text"
-                            value={item.estimatedEffort}
-                            onChange={(e) => updateRoadmapItem(item.epicId, 'estimatedEffort', e.target.value)}
-                            placeholder="e.g., 2 weeks"
-                            className="effort-input-table"
-                          />
-                        ) : (
-                          <span className="effort-display">{item.estimatedEffort || '-'}</span>
                         )}
                       </td>
                       {isEditMode && (

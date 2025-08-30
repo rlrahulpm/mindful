@@ -23,6 +23,20 @@ interface EpicEffort {
   notes?: string;
 }
 
+interface EffortRatingConfig {
+  id?: number;
+  productId: number;
+  unitType: string;
+  star1Max: number;
+  star2Min: number;
+  star2Max: number;
+  star3Min: number;
+  star3Max: number;
+  star4Min: number;
+  star4Max: number;
+  star5Min: number;
+}
+
 type EffortUnit = 'SPRINTS' | 'DAYS';
 
 interface Epic {
@@ -60,6 +74,8 @@ const CapacityPlanning: React.FC = () => {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showTeamModal, setShowTeamModal] = useState(false);
   const [newTeam, setNewTeam] = useState({ name: '', description: '' });
+  const [effortRatingConfigs, setEffortRatingConfigs] = useState<EffortRatingConfig[]>([]);
+  const [editingRatingConfig, setEditingRatingConfig] = useState<EffortRatingConfig | null>(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -69,8 +85,9 @@ const CapacityPlanning: React.FC = () => {
     if (product) {
       loadCapacityPlan();
       loadTeams();
+      loadEffortRatingConfigs();
     }
-  }, [product, selectedYear, selectedQuarter]);
+  }, [product, selectedYear, selectedQuarter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadTeams = async () => {
     if (!product) return;
@@ -91,6 +108,27 @@ const CapacityPlanning: React.FC = () => {
     } catch (err: any) {
       setError('Failed to load teams');
       console.error(err);
+    }
+  };
+
+  const loadEffortRatingConfigs = async () => {
+    if (!product) return;
+    
+    try {
+      const response = await fetch(`http://localhost:8080/api/products/${product.productId}/capacity-planning/effort-rating-configs`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.ok) {
+        const configs = await response.json();
+        setEffortRatingConfigs(configs);
+      } else {
+        throw new Error('Failed to load effort rating configs');
+      }
+    } catch (err: any) {
+      console.error('Failed to load effort rating configs:', err);
     }
   };
 
@@ -243,6 +281,119 @@ const CapacityPlanning: React.FC = () => {
     );
   };
 
+  const autoFillEffortRatingsAfterSave = async () => {
+    console.log('=== AUTO-FILL EFFORT RATINGS AFTER SAVE ==='); // Called after capacity plan save
+    console.log('Product:', product);
+    console.log('Capacity Plan:', capacityPlan);
+    console.log('Epics count:', epics.length);
+    console.log('Effort Unit:', effortUnit);
+    console.log('Effort Rating Configs:', effortRatingConfigs);
+    
+    if (!product || !capacityPlan || epics.length === 0) {
+      console.error('Missing required data for auto-fill');
+      return;
+    }
+    
+    try {
+      setSaving(true);
+      
+      // Get the effort rating config for the current unit type
+      const config = effortRatingConfigs.find(c => c.unitType === effortUnit);
+      console.log('Found config for unit type', effortUnit, ':', config);
+      
+      if (!config) {
+        console.error(`No effort rating configuration found for ${effortUnit}`);
+        setError(`No effort rating configuration found for ${effortUnit}`);
+        return;
+      }
+      
+      // Calculate total effort for each epic and determine star rating
+      const epicRatings: { [epicId: string]: { epicName: string; totalEffort: number; starRating: number } } = {};
+      
+      console.log('Processing epics:');
+      epics.forEach(epic => {
+        const totalEffort = getTotalEffortForEpic(epic);
+        let starRating = 1;
+        
+        if (totalEffort <= config.star1Max) {
+          starRating = 1;
+        } else if (totalEffort >= config.star2Min && totalEffort <= config.star2Max) {
+          starRating = 2;
+        } else if (totalEffort >= config.star3Min && totalEffort <= config.star3Max) {
+          starRating = 3;
+        } else if (totalEffort >= config.star4Min && totalEffort <= config.star4Max) {
+          starRating = 4;
+        } else if (totalEffort >= config.star5Min) {
+          starRating = 5;
+        } else {
+          // Handle gaps in configuration
+          if (totalEffort < config.star2Min) {
+            starRating = 1;
+          } else if (totalEffort < config.star3Min) {
+            starRating = 2;
+          } else if (totalEffort < config.star4Min) {
+            starRating = 3;
+          } else if (totalEffort < config.star5Min) {
+            starRating = 4;
+          } else {
+            starRating = 5;
+          }
+        }
+        
+        epicRatings[epic.epicId] = {
+          epicName: epic.epicName,
+          totalEffort,
+          starRating
+        };
+        
+        console.log(`Epic "${epic.epicName}" (${epic.epicId}): ${totalEffort} ${effortUnit.toLowerCase()} → ${starRating} stars`);
+      });
+      
+      console.log('Updating roadmap planner with ratings:', epicRatings);
+      
+      // Update roadmap planner with calculated star ratings
+      const roadmapUpdatePromises = Object.entries(epicRatings).map(async ([epicId, rating]) => {
+        try {
+          const url = `http://localhost:8080/api/products/${product.productId}/roadmap/${selectedYear}/${selectedQuarter}/epics/${epicId}/effort-rating`;
+          console.log('Calling API:', url, 'with rating:', rating.starRating);
+          
+          const response = await fetch(url, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({
+              effortRating: rating.starRating
+            })
+          });
+          
+          if (!response.ok) {
+            console.warn(`Failed to update effort rating for epic ${epicId}. Status: ${response.status}`);
+            const errorText = await response.text();
+            console.warn('Error response:', errorText);
+          } else {
+            console.log(`Successfully updated effort rating for epic ${epicId} to ${rating.starRating} stars`);
+          }
+        } catch (err) {
+          console.warn(`Error updating effort rating for epic ${epicId}:`, err);
+        }
+      });
+      
+      await Promise.all(roadmapUpdatePromises);
+      
+      // Log success message (no alert needed since this happens automatically)
+      const successMessage = `Auto-filled effort ratings for ${Object.keys(epicRatings).length} epics based on capacity planning totals`;
+      console.log(successMessage);
+      
+    } catch (err: any) {
+      console.error('Error in autoFillEffortRatingsAfterSave:', err);
+      setError('Failed to auto-fill effort ratings');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const saveCapacityPlan = async () => {
     if (!product || !capacityPlan) return;
     
@@ -283,6 +434,9 @@ const CapacityPlanning: React.FC = () => {
       if (response.ok) {
         setIsEditMode(false);
         await loadCapacityPlan(); // Reload to get updated data
+        
+        // Auto-fill effort ratings after saving capacity plan
+        await autoFillEffortRatingsAfterSave();
       } else {
         throw new Error('Failed to save capacity plan');
       }
@@ -334,6 +488,42 @@ const CapacityPlanning: React.FC = () => {
       return total + (effort?.effortDays || 0);
     }, 0);
   };
+
+  const updateEffortRatingConfig = async (config: EffortRatingConfig) => {
+    if (!product) return;
+    
+    try {
+      const response = await fetch(`http://localhost:8080/api/products/${product.productId}/capacity-planning/effort-rating-configs/${config.unitType}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          unitType: config.unitType,
+          star1Max: config.star1Max,
+          star2Min: config.star2Min,
+          star2Max: config.star2Max,
+          star3Min: config.star3Min,
+          star3Max: config.star3Max,
+          star4Min: config.star4Min,
+          star4Max: config.star4Max,
+          star5Min: config.star5Min
+        })
+      });
+
+      if (response.ok) {
+        await loadEffortRatingConfigs();
+        setEditingRatingConfig(null);
+      } else {
+        throw new Error('Failed to update effort rating config');
+      }
+    } catch (err: any) {
+      setError('Failed to update effort rating config');
+      console.error(err);
+    }
+  };
+
 
   return (
     <div className="capacity-planning-container">
@@ -420,13 +610,16 @@ const CapacityPlanning: React.FC = () => {
             </div>
           </div>
 
-          <button
-            onClick={() => setShowSettingsModal(true)}
-            className="settings-btn"
-            title="Settings"
-          >
-            <span className="material-icons">settings</span>
-          </button>
+          <div className="capacity-actions">
+            
+            <button
+              onClick={() => setShowSettingsModal(true)}
+              className="settings-btn"
+              title="Settings"
+            >
+              <span className="material-icons">settings</span>
+            </button>
+          </div>
         </div>
 
         {epics.length === 0 ? (
@@ -533,25 +726,6 @@ const CapacityPlanning: React.FC = () => {
               </button>
             </div>
             <div className="modal-body">
-              {/* Effort Unit Section */}
-              <div className="settings-section">
-                <h4>Effort Unit</h4>
-                <div className="unit-toggle">
-                  <button
-                    className={`unit-option ${effortUnit === 'SPRINTS' ? 'active' : ''}`}
-                    onClick={() => setEffortUnit('SPRINTS')}
-                  >
-                    Sprints
-                  </button>
-                  <button
-                    className={`unit-option ${effortUnit === 'DAYS' ? 'active' : ''}`}
-                    onClick={() => setEffortUnit('DAYS')}
-                  >
-                    Days
-                  </button>
-                </div>
-              </div>
-
               {/* Team Management Section */}
               <div className="settings-section">
                 <div className="section-header">
@@ -587,6 +761,74 @@ const CapacityPlanning: React.FC = () => {
                     ))
                   )}
                 </div>
+              </div>
+
+              {/* Effort Unit Section */}
+              <div className="settings-section">
+                <h4>Effort Unit</h4>
+                <div className="unit-toggle">
+                  <button
+                    className={`unit-option ${effortUnit === 'SPRINTS' ? 'active' : ''}`}
+                    onClick={() => setEffortUnit('SPRINTS')}
+                  >
+                    Sprints
+                  </button>
+                  <button
+                    className={`unit-option ${effortUnit === 'DAYS' ? 'active' : ''}`}
+                    onClick={() => setEffortUnit('DAYS')}
+                  >
+                    Days
+                  </button>
+                </div>
+              </div>
+
+              {/* Effort Rating Configuration Section */}
+              <div className="settings-section">
+                <h4>Auto-Fill Effort Ratings</h4>
+                <p className="section-description">
+                  Configure how capacity planning totals map to effort ratings in the roadmap planner.
+                </p>
+                
+                {effortRatingConfigs.length === 0 ? (
+                  <div>Loading effort rating configurations...</div>
+                ) : (
+                  effortRatingConfigs.map(config => (
+                  <div key={config.unitType} className="rating-config-item">
+                    <div className="config-header">
+                      <h5>{config.unitType === 'SPRINTS' ? 'Sprints Configuration' : 'Days Configuration'}</h5>
+                      <button
+                        onClick={() => setEditingRatingConfig(config)}
+                        className="edit-config-btn"
+                      >
+                        <span className="material-icons">edit</span>
+                      </button>
+                    </div>
+                    
+                    <div className="rating-ranges">
+                      <div className="rating-range">
+                        <span className="stars">★</span>
+                        <span className="range-text">≤ {config.star1Max} {config.unitType.toLowerCase()}</span>
+                      </div>
+                      <div className="rating-range">
+                        <span className="stars">★★</span>
+                        <span className="range-text">{config.star2Min}-{config.star2Max} {config.unitType.toLowerCase()}</span>
+                      </div>
+                      <div className="rating-range">
+                        <span className="stars">★★★</span>
+                        <span className="range-text">{config.star3Min}-{config.star3Max} {config.unitType.toLowerCase()}</span>
+                      </div>
+                      <div className="rating-range">
+                        <span className="stars">★★★★</span>
+                        <span className="range-text">{config.star4Min}-{config.star4Max} {config.unitType.toLowerCase()}</span>
+                      </div>
+                      <div className="rating-range">
+                        <span className="stars">★★★★★</span>
+                        <span className="range-text">≥ {config.star5Min} {config.unitType.toLowerCase()}</span>
+                      </div>
+                    </div>
+                  </div>
+                  ))
+                )}
               </div>
             </div>
             <div className="modal-actions">
@@ -657,6 +899,175 @@ const CapacityPlanning: React.FC = () => {
                 disabled={!newTeam.name.trim()}
               >
                 Add Team
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Rating Config Modal */}
+      {editingRatingConfig && (
+        <div className="modal-overlay" onClick={() => setEditingRatingConfig(null)}>
+          <div className="rating-config-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Edit {editingRatingConfig.unitType === 'SPRINTS' ? 'Sprints' : 'Days'} Rating Configuration</h3>
+              <button 
+                onClick={() => setEditingRatingConfig(null)}
+                className="modal-close-btn"
+              >
+                <span className="material-icons">close</span>
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="rating-config-form">
+                <div className="config-row">
+                  <div className="star-label">
+                    <span className="stars">★</span>
+                    <span>1 Star</span>
+                  </div>
+                  <div className="range-inputs">
+                    <span>≤</span>
+                    <input
+                      type="number"
+                      min="1"
+                      value={editingRatingConfig.star1Max}
+                      onChange={(e) => setEditingRatingConfig({
+                        ...editingRatingConfig,
+                        star1Max: parseInt(e.target.value) || 1
+                      })}
+                      className="config-input"
+                    />
+                    <span>{editingRatingConfig.unitType.toLowerCase()}</span>
+                  </div>
+                </div>
+
+                <div className="config-row">
+                  <div className="star-label">
+                    <span className="stars">★★</span>
+                    <span>2 Stars</span>
+                  </div>
+                  <div className="range-inputs">
+                    <input
+                      type="number"
+                      min="1"
+                      value={editingRatingConfig.star2Min}
+                      onChange={(e) => setEditingRatingConfig({
+                        ...editingRatingConfig,
+                        star2Min: parseInt(e.target.value) || 1
+                      })}
+                      className="config-input"
+                    />
+                    <span>to</span>
+                    <input
+                      type="number"
+                      min="1"
+                      value={editingRatingConfig.star2Max}
+                      onChange={(e) => setEditingRatingConfig({
+                        ...editingRatingConfig,
+                        star2Max: parseInt(e.target.value) || 1
+                      })}
+                      className="config-input"
+                    />
+                    <span>{editingRatingConfig.unitType.toLowerCase()}</span>
+                  </div>
+                </div>
+
+                <div className="config-row">
+                  <div className="star-label">
+                    <span className="stars">★★★</span>
+                    <span>3 Stars</span>
+                  </div>
+                  <div className="range-inputs">
+                    <input
+                      type="number"
+                      min="1"
+                      value={editingRatingConfig.star3Min}
+                      onChange={(e) => setEditingRatingConfig({
+                        ...editingRatingConfig,
+                        star3Min: parseInt(e.target.value) || 1
+                      })}
+                      className="config-input"
+                    />
+                    <span>to</span>
+                    <input
+                      type="number"
+                      min="1"
+                      value={editingRatingConfig.star3Max}
+                      onChange={(e) => setEditingRatingConfig({
+                        ...editingRatingConfig,
+                        star3Max: parseInt(e.target.value) || 1
+                      })}
+                      className="config-input"
+                    />
+                    <span>{editingRatingConfig.unitType.toLowerCase()}</span>
+                  </div>
+                </div>
+
+                <div className="config-row">
+                  <div className="star-label">
+                    <span className="stars">★★★★</span>
+                    <span>4 Stars</span>
+                  </div>
+                  <div className="range-inputs">
+                    <input
+                      type="number"
+                      min="1"
+                      value={editingRatingConfig.star4Min}
+                      onChange={(e) => setEditingRatingConfig({
+                        ...editingRatingConfig,
+                        star4Min: parseInt(e.target.value) || 1
+                      })}
+                      className="config-input"
+                    />
+                    <span>to</span>
+                    <input
+                      type="number"
+                      min="1"
+                      value={editingRatingConfig.star4Max}
+                      onChange={(e) => setEditingRatingConfig({
+                        ...editingRatingConfig,
+                        star4Max: parseInt(e.target.value) || 1
+                      })}
+                      className="config-input"
+                    />
+                    <span>{editingRatingConfig.unitType.toLowerCase()}</span>
+                  </div>
+                </div>
+
+                <div className="config-row">
+                  <div className="star-label">
+                    <span className="stars">★★★★★</span>
+                    <span>5 Stars</span>
+                  </div>
+                  <div className="range-inputs">
+                    <span>≥</span>
+                    <input
+                      type="number"
+                      min="1"
+                      value={editingRatingConfig.star5Min}
+                      onChange={(e) => setEditingRatingConfig({
+                        ...editingRatingConfig,
+                        star5Min: parseInt(e.target.value) || 1
+                      })}
+                      className="config-input"
+                    />
+                    <span>{editingRatingConfig.unitType.toLowerCase()}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="modal-actions">
+              <button 
+                onClick={() => setEditingRatingConfig(null)}
+                className="btn-cancel"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => updateEffortRatingConfig(editingRatingConfig)}
+                className="btn-confirm"
+              >
+                Save Configuration
               </button>
             </div>
           </div>

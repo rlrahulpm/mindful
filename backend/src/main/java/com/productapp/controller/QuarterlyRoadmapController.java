@@ -191,6 +191,84 @@ public class QuarterlyRoadmapController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new HashSet<>());
         }
     }
+    
+    @PutMapping("/{year}/{quarter}/epics/{epicId}/effort-rating")
+    public ResponseEntity<?> updateEpicEffortRating(
+            @PathVariable Long productId,
+            @PathVariable Integer year,
+            @PathVariable Integer quarter,
+            @PathVariable String epicId,
+            @RequestBody EffortRatingUpdateRequest request) {
+        try {
+            System.out.println("UPDATE EPIC EFFORT RATING CALLED - Product: " + productId + ", Year: " + year + ", Quarter: " + quarter + ", Epic: " + epicId + ", Rating: " + request.getEffortRating());
+            
+            Optional<QuarterlyRoadmap> roadmapOpt = quarterlyRoadmapRepository.findByProductIdAndYearAndQuarter(productId, year, quarter);
+            
+            if (roadmapOpt.isEmpty()) {
+                System.out.println("Roadmap not found for Product: " + productId + ", Year: " + year + ", Quarter: " + quarter);
+                return ResponseEntity.notFound().build();
+            }
+            
+            QuarterlyRoadmap roadmap = roadmapOpt.get();
+            
+            if (roadmap.getRoadmapItems() == null || roadmap.getRoadmapItems().isEmpty()) {
+                System.out.println("No roadmap items found in roadmap ID: " + roadmap.getId());
+                return ResponseEntity.notFound().build();
+            }
+            
+            // Parse existing roadmap items
+            List<QuarterlyRoadmapRequest.RoadmapItem> items = objectMapper.readValue(
+                roadmap.getRoadmapItems(),
+                new TypeReference<List<QuarterlyRoadmapRequest.RoadmapItem>>() {}
+            );
+            
+            System.out.println("Found " + items.size() + " roadmap items");
+            
+            // Find and update the specific epic
+            boolean epicFound = false;
+            for (QuarterlyRoadmapRequest.RoadmapItem item : items) {
+                System.out.println("Checking item - Epic ID: " + item.getEpicId() + ", Epic Name: " + item.getEpicName());
+                if (item.getEpicId().equals(epicId)) {
+                    Integer oldRating = item.getEffortRating();
+                    item.setEffortRating(request.getEffortRating());
+                    epicFound = true;
+                    System.out.println("EPIC FOUND AND UPDATED - " + item.getEpicName() + " rating changed from " + oldRating + " to " + request.getEffortRating());
+                    break;
+                }
+            }
+            
+            if (!epicFound) {
+                System.out.println("Epic not found with ID: " + epicId);
+                return ResponseEntity.notFound().build();
+            }
+            
+            // Save the updated roadmap
+            String updatedItemsJson = objectMapper.writeValueAsString(items);
+            roadmap.setRoadmapItems(updatedItemsJson);
+            quarterlyRoadmapRepository.save(roadmap);
+            
+            System.out.println("Successfully updated epic effort rating and saved roadmap");
+            return ResponseEntity.ok().build();
+            
+        } catch (Exception e) {
+            System.out.println("ERROR updating epic effort rating: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    // Request class for effort rating update
+    public static class EffortRatingUpdateRequest {
+        private Integer effortRating;
+        
+        public Integer getEffortRating() {
+            return effortRating;
+        }
+        
+        public void setEffortRating(Integer effortRating) {
+            this.effortRating = effortRating;
+        }
+    }
 
     private QuarterlyRoadmapResponse convertToResponse(QuarterlyRoadmap roadmap) throws JsonProcessingException {
         QuarterlyRoadmapResponse response = new QuarterlyRoadmapResponse();

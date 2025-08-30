@@ -45,6 +45,9 @@ public class CapacityPlanningController {
     private QuarterlyRoadmapRepository roadmapRepository;
     
     @Autowired
+    private EffortRatingConfigRepository effortRatingConfigRepository;
+    
+    @Autowired
     private ObjectMapper objectMapper;
     
     private boolean hasProductAccess(Long productId, Long userId) {
@@ -295,6 +298,105 @@ public class CapacityPlanningController {
         }
     }
     
+    // Get effort rating configurations for a product
+    @GetMapping("/effort-rating-configs")
+    public ResponseEntity<?> getEffortRatingConfigs(@PathVariable Long productId, Authentication authentication) {
+        try {
+            UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+            logger.info("Fetching effort rating configs for product ID: {} by user ID: {}", productId, userPrincipal.getId());
+            
+            if (!hasProductAccess(productId, userPrincipal.getId())) {
+                logger.warn("User {} attempted to access effort rating configs for product {} without permission", userPrincipal.getId(), productId);
+                return ResponseEntity.notFound().build();
+            }
+            
+            List<EffortRatingConfig> configs = effortRatingConfigRepository.findByProductId(productId);
+            logger.info("Found {} existing effort rating configs in database for product ID: {}", configs.size(), productId);
+            
+            // If no configs exist, create default ones
+            if (configs.isEmpty()) {
+                logger.info("No existing configs found, creating defaults for product ID: {}", productId);
+                EffortRatingConfig sprintsConfig = EffortRatingConfig.createDefaultForSprints(productId);
+                EffortRatingConfig daysConfig = EffortRatingConfig.createDefaultForDays(productId);
+                
+                sprintsConfig = effortRatingConfigRepository.save(sprintsConfig);
+                daysConfig = effortRatingConfigRepository.save(daysConfig);
+                
+                configs = List.of(sprintsConfig, daysConfig);
+                logger.info("Created default effort rating configs for product ID: {} - SPRINTS: {}, DAYS: {}", productId, sprintsConfig.getId(), daysConfig.getId());
+            }
+            
+            List<EffortRatingConfigResponse> responses = configs.stream()
+                    .map(EffortRatingConfigResponse::new)
+                    .collect(Collectors.toList());
+            
+            logger.info("Returning {} effort rating configs for product ID: {}", configs.size(), productId);
+            for (EffortRatingConfig config : configs) {
+                logger.info("Config - ID: {}, Unit: {}, 1★≤{}, 2★{}-{}, 3★{}-{}, 4★{}-{}, 5★≥{}", 
+                    config.getId(), config.getUnitType(), config.getStar1Max(), 
+                    config.getStar2Min(), config.getStar2Max(), config.getStar3Min(), config.getStar3Max(),
+                    config.getStar4Min(), config.getStar4Max(), config.getStar5Min());
+            }
+            
+            return ResponseEntity.ok(responses);
+            
+        } catch (Exception e) {
+            logger.error("Error fetching effort rating configs for product ID: {}", productId, e);
+            return ResponseEntity.internalServerError().body("Error fetching effort rating configs");
+        }
+    }
+    
+    // Update effort rating configuration
+    @PutMapping("/effort-rating-configs/{unitType}")
+    public ResponseEntity<?> updateEffortRatingConfig(@PathVariable Long productId, @PathVariable String unitType, 
+            @Valid @RequestBody EffortRatingConfigRequest request, Authentication authentication) {
+        try {
+            UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+            logger.info("Updating effort rating config for product ID: {}, unitType: {} by user ID: {}", productId, unitType, userPrincipal.getId());
+            
+            if (!hasProductAccess(productId, userPrincipal.getId())) {
+                logger.warn("User {} attempted to update effort rating config for product {} without permission", userPrincipal.getId(), productId);
+                return ResponseEntity.notFound().build();
+            }
+            
+            // Validate unit type
+            if (!unitType.equals("SPRINTS") && !unitType.equals("DAYS")) {
+                return ResponseEntity.badRequest().body("Unit type must be SPRINTS or DAYS");
+            }
+            
+            // Get existing config or create new one
+            Optional<EffortRatingConfig> configOpt = effortRatingConfigRepository.findByProductIdAndUnitType(productId, unitType);
+            EffortRatingConfig config;
+            
+            if (configOpt.isPresent()) {
+                config = configOpt.get();
+            } else {
+                config = new EffortRatingConfig();
+                config.setProductId(productId);
+                config.setUnitType(unitType);
+            }
+            
+            // Update configuration values
+            config.setStar1Max(request.getStar1Max());
+            config.setStar2Min(request.getStar2Min());
+            config.setStar2Max(request.getStar2Max());
+            config.setStar3Min(request.getStar3Min());
+            config.setStar3Max(request.getStar3Max());
+            config.setStar4Min(request.getStar4Min());
+            config.setStar4Max(request.getStar4Max());
+            config.setStar5Min(request.getStar5Min());
+            
+            config = effortRatingConfigRepository.save(config);
+            
+            logger.info("Effort rating config updated successfully for product ID: {}, unitType: {}", productId, unitType);
+            return ResponseEntity.ok(new EffortRatingConfigResponse(config));
+            
+        } catch (Exception e) {
+            logger.error("Error updating effort rating config for product ID: {}, unitType: {}", productId, unitType, e);
+            return ResponseEntity.internalServerError().body("Error updating effort rating config");
+        }
+    }
+
     private void createDefaultEpicEffortsFromRoadmap(CapacityPlan capacityPlan, Long productId, Integer year, Integer quarter) {
         try {
             // Get roadmap for this quarter

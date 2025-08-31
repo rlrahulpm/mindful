@@ -65,6 +65,8 @@ public class QuarterlyRoadmapRequest {
         private Integer effort;
         private Double riceScore;
         private Integer effortRating;
+        private String startDate;
+        private String endDate;
         
         public RoadmapItem() {
         }
@@ -187,6 +189,22 @@ public class QuarterlyRoadmapRequest {
         
         public void setEffortRating(Integer effortRating) {
             this.effortRating = effortRating;
+        }
+        
+        public String getStartDate() {
+            return startDate;
+        }
+        
+        public void setStartDate(String startDate) {
+            this.startDate = startDate;
+        }
+        
+        public String getEndDate() {
+            return endDate;
+        }
+        
+        public void setEndDate(String endDate) {
+            this.endDate = endDate;
         }
     }
 }

@@ -3,6 +3,7 @@ package com.productapp.controller;
 import com.productapp.dto.*;
 import com.productapp.entity.*;
 import com.productapp.repository.*;
+import com.productapp.repository.RoadmapItemRepository;
 import com.productapp.security.UserPrincipal;
 import com.productapp.exception.ResourceNotFoundException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -17,6 +18,7 @@ import jakarta.validation.Valid;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @RestController
@@ -43,6 +45,9 @@ public class CapacityPlanningController {
     
     @Autowired
     private QuarterlyRoadmapRepository roadmapRepository;
+    
+    @Autowired
+    private RoadmapItemRepository roadmapItemRepository;
     
     @Autowired
     private EffortRatingConfigRepository effortRatingConfigRepository;
@@ -223,6 +228,8 @@ public class CapacityPlanningController {
                 createDefaultEpicEffortsFromRoadmap(capacityPlan, productId, year, quarter);
             } else {
                 capacityPlan = capacityPlanOpt.get();
+                // Sync existing capacity plan with current roadmap (in case new epics were added)
+                syncCapacityPlanWithRoadmap(capacityPlan, productId, year, quarter);
             }
             
             // Get epic efforts
@@ -407,22 +414,21 @@ public class CapacityPlanningController {
             }
             
             QuarterlyRoadmap roadmap = roadmapOpt.get();
-            if (roadmap.getRoadmapItems() == null || roadmap.getRoadmapItems().isEmpty()) {
-                logger.info("No roadmap items found for product ID: {}, Q{} {} - skipping epic creation", productId, quarter, year);
+            // Get roadmap items from normalized table using explicit query
+            List<RoadmapItem> roadmapItems = roadmapItemRepository.findByRoadmapId(roadmap.getId());
+            if (roadmapItems == null || roadmapItems.isEmpty()) {
+                logger.info("No roadmap items found for product ID: {}, Q{} {} (roadmap ID: {}) - skipping epic creation", 
+                           productId, quarter, year, roadmap.getId());
                 return;
             }
-            
-            // Parse roadmap items from JSON
-            List<QuarterlyRoadmapRequest.RoadmapItem> roadmapItems = objectMapper.readValue(
-                roadmap.getRoadmapItems(),
-                new TypeReference<List<QuarterlyRoadmapRequest.RoadmapItem>>() {}
-            );
+            logger.info("Found {} roadmap items for capacity planning in product ID: {}, Q{} {}", 
+                       roadmapItems.size(), productId, quarter, year);
             
             // Get all active teams for this product
             List<Team> teams = teamRepository.findByProductIdAndIsActiveTrue(productId);
             
             // Create epic efforts for each epic and each team (with 0 effort initially)
-            for (QuarterlyRoadmapRequest.RoadmapItem item : roadmapItems) {
+            for (RoadmapItem item : roadmapItems) {
                 for (Team team : teams) {
                     EpicEffort epicEffort = new EpicEffort(
                         capacityPlan.getId(),
@@ -439,6 +445,64 @@ public class CapacityPlanningController {
             
         } catch (Exception e) {
             logger.error("Error creating default epic efforts from roadmap for capacity plan ID: {}", capacityPlan.getId(), e);
+        }
+    }
+
+    private void syncCapacityPlanWithRoadmap(CapacityPlan capacityPlan, Long productId, Integer year, Integer quarter) {
+        try {
+            logger.info("Syncing capacity plan ID {} with roadmap for product ID: {}, Q{} {}", 
+                       capacityPlan.getId(), productId, quarter, year);
+            
+            // Get roadmap for this quarter
+            Optional<QuarterlyRoadmap> roadmapOpt = roadmapRepository.findByProductIdAndYearAndQuarter(productId, year, quarter);
+            if (roadmapOpt.isEmpty()) {
+                logger.info("No roadmap found for product ID: {}, Q{} {} - no sync needed", productId, quarter, year);
+                return;
+            }
+            
+            QuarterlyRoadmap roadmap = roadmapOpt.get();
+            List<RoadmapItem> roadmapItems = roadmapItemRepository.findByRoadmapId(roadmap.getId());
+            
+            if (roadmapItems == null || roadmapItems.isEmpty()) {
+                logger.info("No roadmap items found for product ID: {}, Q{} {} - no sync needed", productId, quarter, year);
+                return;
+            }
+            
+            // Get existing epic efforts
+            List<EpicEffort> existingEfforts = epicEffortRepository.findByCapacityPlanIdOrderByEpicNameTeamId(capacityPlan.getId());
+            Set<String> existingEpicIds = existingEfforts.stream()
+                    .map(EpicEffort::getEpicId)
+                    .collect(Collectors.toSet());
+            
+            // Get all active teams for this product
+            List<Team> teams = teamRepository.findByProductIdAndIsActiveTrue(productId);
+            
+            // Add epic efforts for new epics that don't already exist
+            int newEffortsCreated = 0;
+            for (RoadmapItem item : roadmapItems) {
+                if (!existingEpicIds.contains(item.getEpicId())) {
+                    // This is a new epic, create efforts for all teams
+                    for (Team team : teams) {
+                        EpicEffort epicEffort = new EpicEffort(
+                            capacityPlan.getId(),
+                            item.getEpicId(),
+                            item.getEpicName(),
+                            team.getId(),
+                            0 // Default to 0 effort days
+                        );
+                        epicEffortRepository.save(epicEffort);
+                        newEffortsCreated++;
+                        logger.info("Synced new epic effort for epic '{}' and team '{}' in capacity plan ID: {}", 
+                                   item.getEpicName(), team.getName(), capacityPlan.getId());
+                    }
+                }
+            }
+            
+            logger.info("Sync completed for capacity plan ID {}: created {} new epic efforts", 
+                       capacityPlan.getId(), newEffortsCreated);
+            
+        } catch (Exception e) {
+            logger.error("Error syncing capacity plan ID {} with roadmap", capacityPlan.getId(), e);
         }
     }
 }

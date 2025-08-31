@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.ArrayList;
 
 @Entity
 @Table(name = "quarterly_roadmap")
@@ -22,8 +23,9 @@ public class QuarterlyRoadmap {
     @Column(name = "quarter", nullable = false)
     private Integer quarter;
     
-    @Column(name = "roadmap_items", columnDefinition = "TEXT")
-    private String roadmapItems;
+    @OneToMany(mappedBy = "roadmap", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<RoadmapItem> roadmapItems = new ArrayList<>();
+    
     
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -34,12 +36,11 @@ public class QuarterlyRoadmap {
     public QuarterlyRoadmap() {
     }
     
-    public QuarterlyRoadmap(Long id, Long productId, Integer year, Integer quarter, String roadmapItems, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public QuarterlyRoadmap(Long id, Long productId, Integer year, Integer quarter, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.productId = productId;
         this.year = year;
         this.quarter = quarter;
-        this.roadmapItems = roadmapItems;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -88,13 +89,14 @@ public class QuarterlyRoadmap {
         this.quarter = quarter;
     }
     
-    public String getRoadmapItems() {
+    public List<RoadmapItem> getRoadmapItems() {
         return roadmapItems;
     }
     
-    public void setRoadmapItems(String roadmapItems) {
+    public void setRoadmapItems(List<RoadmapItem> roadmapItems) {
         this.roadmapItems = roadmapItems;
     }
+    
     
     public LocalDateTime getCreatedAt() {
         return createdAt;

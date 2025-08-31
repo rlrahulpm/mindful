@@ -1,19 +1,14 @@
 package com.productapp.dto;
 
-public class ProductBacklogRequest {
+public class BacklogEpicRequest {
     private String epics;
-    
-    public ProductBacklogRequest() {
-    }
-    
-    public ProductBacklogRequest(String epics) {
-        this.epics = epics;
-    }
-    
+
+    public BacklogEpicRequest() {}
+
     public String getEpics() {
         return epics;
     }
-    
+
     public void setEpics(String epics) {
         this.epics = epics;
     }

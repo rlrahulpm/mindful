@@ -293,13 +293,23 @@ const RoadmapVisualization: React.FC = () => {
                   return groups;
                 }, {});
 
+                // Sort groups by initiative name first, then by theme name
+                const sortedGroupEntries = Object.entries(groupedItems).sort(([keyA, groupA], [keyB, groupB]) => {
+                  // First sort by initiative name
+                  if (groupA.initiativeName !== groupB.initiativeName) {
+                    return groupA.initiativeName.localeCompare(groupB.initiativeName);
+                  }
+                  // Then sort by theme name within the same initiative
+                  return groupA.themeName.localeCompare(groupB.themeName);
+                });
+
                 return (
                   <>
                     <div className="gantt-grid">
                       <div className="gantt-header-row">
                         <div className="gantt-header-initiative">Initiative</div>
                         <div className="gantt-header-theme">Theme</div>
-                        <div className="gantt-header-task">Task</div>
+                        <div className="gantt-header-task">Epic</div>
                         <div className="gantt-header-timeline">
                           {months.map((month, index) => (
                             <div 
@@ -314,36 +324,41 @@ const RoadmapVisualization: React.FC = () => {
                       </div>
                       
                       <div className="gantt-items">
-                        {Object.entries(groupedItems).map(([groupKey, group]) => (
-                          <div key={groupKey} className="gantt-group">
-                            {group.items.map((item: RoadmapItem, index: number) => {
-                              const barStyle = calculateGanttBar(item);
-                              const isFirstInGroup = index === 0;
-                              const isLastInGroup = index === group.items.length - 1;
-                              
-                              return (
-                                <div key={item.id} className={`gantt-item-row ${isFirstInGroup ? 'first-in-group' : ''} ${isLastInGroup ? 'last-in-group' : ''}`}>
-                                  <div className="gantt-item-initiative">
-                                    {isFirstInGroup && (
-                                      <span className="gantt-item-text group-label">
-                                        {group.initiativeName}
-                                      </span>
-                                    )}
-                                  </div>
-                                  
-                                  <div className="gantt-item-theme">
-                                    {isFirstInGroup && (
-                                      <div className="gantt-theme-content group-label">
-                                        {group.themeColor && (
-                                          <div 
-                                            className="theme-indicator-small" 
-                                            style={{ backgroundColor: group.themeColor }}
-                                          ></div>
-                                        )}
-                                        <span className="gantt-item-text">{group.themeName}</span>
-                                      </div>
-                                    )}
-                                  </div>
+                        {sortedGroupEntries.map(([groupKey, group], groupIndex) => {
+                          // Check if this is the first occurrence of this initiative
+                          const isFirstInitiativeGroup = groupIndex === 0 || 
+                            sortedGroupEntries[groupIndex - 1][1].initiativeName !== group.initiativeName;
+                          
+                          return (
+                            <div key={groupKey} className={`gantt-group ${isFirstInitiativeGroup ? 'new-initiative' : ''}`}>
+                              {group.items.map((item: RoadmapItem, index: number) => {
+                                const barStyle = calculateGanttBar(item);
+                                const isFirstInGroup = index === 0;
+                                const isLastInGroup = index === group.items.length - 1;
+                                
+                                return (
+                                  <div key={item.id} className={`gantt-item-row ${isFirstInGroup ? 'first-in-group' : ''} ${isLastInGroup ? 'last-in-group' : ''}`}>
+                                    <div className="gantt-item-initiative">
+                                      {isFirstInGroup && isFirstInitiativeGroup && (
+                                        <span className="gantt-item-text group-label">
+                                          {group.initiativeName}
+                                        </span>
+                                      )}
+                                    </div>
+                                    
+                                    <div className="gantt-item-theme">
+                                      {isFirstInGroup && (
+                                        <div className="gantt-theme-content group-label">
+                                          {group.themeColor && (
+                                            <div 
+                                              className="theme-indicator-small" 
+                                              style={{ backgroundColor: group.themeColor }}
+                                            ></div>
+                                          )}
+                                          <span className="gantt-item-text">{group.themeName}</span>
+                                        </div>
+                                      )}
+                                    </div>
                                   
                                   <div className="gantt-item-task">
                                     <div className="gantt-item-name">{item.epicName}</div>
@@ -377,7 +392,8 @@ const RoadmapVisualization: React.FC = () => {
                               );
                             })}
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   </>

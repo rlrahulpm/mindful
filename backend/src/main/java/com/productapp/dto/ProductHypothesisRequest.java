@@ -21,7 +21,6 @@ public class ProductHypothesisRequest {
     @Size(max = 10000, message = "Themes cannot exceed 10000 characters")
     private String themes;
     
-    // Getters and Setters
     public String getHypothesisStatement() {
         return hypothesisStatement;
     }

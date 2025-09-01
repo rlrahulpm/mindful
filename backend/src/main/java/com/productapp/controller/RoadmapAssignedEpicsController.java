@@ -33,8 +33,6 @@ public class RoadmapAssignedEpicsController {
             @RequestParam(required = false) Integer excludeYear,
             @RequestParam(required = false) Integer excludeQuarter) {
         
-        logger.info("Fetching assigned epic IDs for product ID: {}, excluding year: {}, quarter: {}", 
-                   productId, excludeYear, excludeQuarter);
         
         try {
             List<String> assignedEpicIds = new ArrayList<>();
@@ -61,7 +59,6 @@ public class RoadmapAssignedEpicsController {
                 }
             }
             
-            logger.info("Found {} assigned epic IDs for product ID: {}", assignedEpicIds.size(), productId);
             return ResponseEntity.ok(assignedEpicIds);
             
         } catch (Exception e) {

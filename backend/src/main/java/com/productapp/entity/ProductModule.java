@@ -47,7 +47,6 @@ public class ProductModule {
         this.completionPercentage = 0;
     }
     
-    // Getters and Setters
     public Long getId() {
         return id;
     }

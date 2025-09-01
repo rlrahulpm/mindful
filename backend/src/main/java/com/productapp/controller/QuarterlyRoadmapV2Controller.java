@@ -7,11 +7,13 @@ import com.productapp.entity.RoadmapItem;
 import com.productapp.entity.EpicEffort;
 import com.productapp.entity.EffortRatingConfig;
 import com.productapp.entity.CapacityPlan;
+import com.productapp.entity.BacklogEpic;
 import com.productapp.repository.QuarterlyRoadmapRepository;
 import com.productapp.repository.RoadmapItemRepository;
 import com.productapp.repository.EpicEffortRepository;
 import com.productapp.repository.EffortRatingConfigRepository;
 import com.productapp.repository.CapacityPlanRepository;
+import com.productapp.repository.BacklogEpicRepository;
 import com.productapp.service.QuarterlyRoadmapService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -55,6 +57,9 @@ public class QuarterlyRoadmapV2Controller {
     @Autowired
     private CapacityPlanRepository capacityPlanRepository;
     
+    @Autowired
+    private BacklogEpicRepository backlogEpicRepository;
+    
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE;
 
     @GetMapping("/{year}/{quarter}")
@@ -63,7 +68,6 @@ public class QuarterlyRoadmapV2Controller {
             @PathVariable Integer year,
             @PathVariable Integer quarter) {
         
-        logger.info("Fetching roadmap for product ID: {}, year: {}, quarter: {}", productId, year, quarter);
         
         try {
             Optional<QuarterlyRoadmap> roadmapOpt = quarterlyRoadmapRepository
@@ -74,13 +78,10 @@ public class QuarterlyRoadmapV2Controller {
                 List<RoadmapItem> items = roadmapItemRepository.findByRoadmapId(roadmap.getId());
                 roadmap.setRoadmapItems(items);
                 
-                logger.info("Roadmap found with {} items for product ID: {}, year: {}, quarter: {}", 
-                           items.size(), productId, year, quarter);
                 
                 QuarterlyRoadmapResponse response = convertToResponse(roadmap);
                 return ResponseEntity.ok(response);
             } else {
-                logger.info("No roadmap found for product ID: {}, year: {}, quarter: {}", productId, year, quarter);
                 return ResponseEntity.notFound().build();
             }
         } catch (Exception e) {
@@ -100,21 +101,6 @@ public class QuarterlyRoadmapV2Controller {
             return ResponseEntity.badRequest().body("Request body cannot be null");
         }
         
-        logger.info("Creating/updating roadmap for product ID: {}, year: {}, quarter: {} with {} items", 
-                   productId, request.getYear(), request.getQuarter(), 
-                   request.getRoadmapItems() != null ? request.getRoadmapItems().size() : 0);
-        
-        // Log the entire request for debugging
-        logger.info("Request body details: year={}, quarter={}, roadmapItems={}", 
-                   request.getYear(), request.getQuarter(), request.getRoadmapItems());
-        
-        // Log the entire request JSON for debugging
-        try {
-            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            logger.info("Full request body JSON: {}", mapper.writeValueAsString(request));
-        } catch (Exception e) {
-            logger.warn("Could not serialize request body for debugging", e);
-        }
         
         try {
             // Use service to handle transactional operations
@@ -128,49 +114,16 @@ public class QuarterlyRoadmapV2Controller {
                 QuarterlyRoadmap updatedRoadmap = updatedRoadmapOpt.get();
                 List<RoadmapItem> items = roadmapItemRepository.findByRoadmapId(updatedRoadmap.getId());
                 updatedRoadmap.setRoadmapItems(items);
-                logger.info("Controller: Successfully retrieved roadmap with {} items", items.size());
                 
                 try {
                     QuarterlyRoadmapResponse response = convertToResponse(updatedRoadmap);
-                    logger.info("Response conversion successful, returning response");
-                    
-                    // Test if response is serializable
-                    logger.info("Response object: id={}, productId={}, year={}, quarter={}, itemsCount={}", 
-                               response.getId(), response.getProductId(), response.getYear(), 
-                               response.getQuarter(), response.getRoadmapItems().size());
-                    
-                    logger.info("About to return ResponseEntity.ok() - transaction should commit after this");
-                    
-                    try {
-                        ResponseEntity<?> result = ResponseEntity.ok(response);
-                        logger.info("ResponseEntity.ok() created successfully, returning result");
-                        
-                        // Double-check data persistence before returning
-                        try {
-                            Optional<QuarterlyRoadmap> verifyRoadmap = quarterlyRoadmapRepository
-                                    .findByProductIdAndYearAndQuarter(productId, request.getYear(), request.getQuarter());
-                            if (verifyRoadmap.isPresent()) {
-                                logger.info("VERIFICATION: Roadmap exists in DB with ID: {}", verifyRoadmap.get().getId());
-                            } else {
-                                logger.error("VERIFICATION FAILED: Roadmap not found in DB after save");
-                            }
-                        } catch (Exception verifyEx) {
-                            logger.error("Error during verification check", verifyEx);
-                        }
-                        
-                        return result;
-                    } catch (Exception finalEx) {
-                        logger.error("Error creating ResponseEntity.ok() final response", finalEx);
-                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                .body("Error creating final response: " + finalEx.getMessage());
-                    }
+                    return ResponseEntity.ok(response);
                 } catch (Exception responseEx) {
                     logger.error("Error converting response for roadmap ID: {}", updatedRoadmap.getId(), responseEx);
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                             .body("Error preparing response: " + responseEx.getMessage());
                 }
             } else {
-                logger.error("Controller: Failed to retrieve saved roadmap");
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body("Error: Could not retrieve saved roadmap");
             }
@@ -218,7 +171,7 @@ public class QuarterlyRoadmapV2Controller {
             }
             
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error updating effort rating for epic ID: {}", epicId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error updating effort rating: " + e.getMessage());
         }
@@ -229,7 +182,6 @@ public class QuarterlyRoadmapV2Controller {
             throw new IllegalArgumentException("Roadmap cannot be null");
         }
         
-        logger.info("Converting roadmap ID {} to response", roadmap.getId());
         QuarterlyRoadmapResponse response = new QuarterlyRoadmapResponse();
         response.setId(roadmap.getId());
         response.setProductId(roadmap.getProductId());
@@ -241,46 +193,57 @@ public class QuarterlyRoadmapV2Controller {
         // Convert entity items to DTO items with auto-filled effort ratings
         List<QuarterlyRoadmapRequest.RoadmapItem> dtoItems = new ArrayList<>();
         if (roadmap.getRoadmapItems() != null) {
-            logger.info("Converting {} roadmap items", roadmap.getRoadmapItems().size());
-            
             // Get effort ratings from capacity planning
             Map<String, Integer> epicEffortRatings = getAutoFilledEffortRatings(roadmap.getProductId(), roadmap.getYear(), roadmap.getQuarter());
             
             for (RoadmapItem item : roadmap.getRoadmapItems()) {
                 QuarterlyRoadmapRequest.RoadmapItem dtoItem = new QuarterlyRoadmapRequest.RoadmapItem();
-            dtoItem.setEpicId(item.getEpicId());
-            dtoItem.setEpicName(item.getEpicName());
-            dtoItem.setEpicDescription(item.getEpicDescription());
-            dtoItem.setPriority(item.getPriority());
-            dtoItem.setStatus(item.getStatus());
-            dtoItem.setEstimatedEffort(item.getEstimatedEffort());
-            dtoItem.setAssignedTeam(item.getAssignedTeam());
-            dtoItem.setReach(item.getReach());
-            dtoItem.setImpact(item.getImpact());
-            dtoItem.setConfidence(item.getConfidence());
-            dtoItem.setRiceScore(item.getRiceScore());
-            
-            // Use auto-filled effort rating from capacity planning if available, otherwise use stored value
-            Integer autoFilledRating = epicEffortRatings.get(item.getEpicId());
-            if (autoFilledRating != null && autoFilledRating > 0) {
-                dtoItem.setEffortRating(autoFilledRating);
-                logger.debug("Auto-filled effort rating {} for epic '{}' from capacity planning", autoFilledRating, item.getEpicName());
-            } else {
-                dtoItem.setEffortRating(item.getEffortRating());
+                dtoItem.setEpicId(item.getEpicId());
+                dtoItem.setEpicName(item.getEpicName());
+                dtoItem.setEpicDescription(item.getEpicDescription());
+                dtoItem.setPriority(item.getPriority());
+                dtoItem.setStatus(item.getStatus());
+                dtoItem.setEstimatedEffort(item.getEstimatedEffort());
+                dtoItem.setAssignedTeam(item.getAssignedTeam());
+                dtoItem.setReach(item.getReach());
+                dtoItem.setImpact(item.getImpact());
+                dtoItem.setConfidence(item.getConfidence());
+                dtoItem.setRiceScore(item.getRiceScore());
+                
+                // Use auto-filled effort rating from capacity planning if available, otherwise use stored value
+                Integer autoFilledRating = epicEffortRatings.get(item.getEpicId());
+                if (autoFilledRating != null && autoFilledRating > 0) {
+                    dtoItem.setEffortRating(autoFilledRating);
+                } else {
+                    dtoItem.setEffortRating(item.getEffortRating());
+                }
+                
+                // Set initiative and theme information from stored values or fetch from backlog
+                if (item.getInitiativeName() != null && item.getThemeName() != null) {
+                    // Use stored values if available
+                    dtoItem.setInitiativeName(item.getInitiativeName());
+                    dtoItem.setThemeName(item.getThemeName());
+                    dtoItem.setThemeColor(item.getThemeColor());
+                } else {
+                    // Fetch from backlog epic if not stored
+                    BacklogEpic epicDetails = getEpicDetails(roadmap.getProductId(), item.getEpicId());
+                    if (epicDetails != null) {
+                        dtoItem.setInitiativeName(epicDetails.getInitiativeName());
+                        dtoItem.setThemeName(epicDetails.getThemeName());
+                        dtoItem.setThemeColor(epicDetails.getThemeColor());
+                    }
+                }
+                
+                // Format dates for response
+                if (item.getStartDate() != null) {
+                    dtoItem.setStartDate(item.getStartDate().format(DATE_FORMATTER));
+                }
+                if (item.getEndDate() != null) {
+                    dtoItem.setEndDate(item.getEndDate().format(DATE_FORMATTER));
+                }
+                
+                dtoItems.add(dtoItem);
             }
-            
-            // Format dates for response
-            if (item.getStartDate() != null) {
-                dtoItem.setStartDate(item.getStartDate().format(DATE_FORMATTER));
-            }
-            if (item.getEndDate() != null) {
-                dtoItem.setEndDate(item.getEndDate().format(DATE_FORMATTER));
-            }
-            
-            dtoItems.add(dtoItem);
-            }
-        } else {
-            logger.info("No roadmap items to convert - roadmap items is null");
         }
         response.setRoadmapItems(dtoItems);
         
@@ -297,7 +260,6 @@ public class QuarterlyRoadmapV2Controller {
             // Get capacity plan for this quarter
             Optional<CapacityPlan> capacityPlanOpt = capacityPlanRepository.findByProductIdAndYearAndQuarter(productId, year, quarter);
             if (capacityPlanOpt.isEmpty()) {
-                logger.debug("No capacity plan found for auto-fill effort ratings - product ID: {}, Q{} {}", productId, quarter, year);
                 return effortRatings;
             }
             
@@ -306,14 +268,12 @@ public class QuarterlyRoadmapV2Controller {
             // Get effort rating configurations for this product
             List<EffortRatingConfig> configs = effortRatingConfigRepository.findByProductId(productId);
             if (configs.isEmpty()) {
-                logger.debug("No effort rating configs found for auto-fill - product ID: {}", productId);
                 return effortRatings;
             }
             
             // Get epic efforts from capacity planning
             List<EpicEffort> epicEfforts = epicEffortRepository.findByCapacityPlanIdOrderByEpicNameTeamId(capacityPlan.getId());
             if (epicEfforts.isEmpty()) {
-                logger.debug("No epic efforts found for auto-fill - capacity plan ID: {}", capacityPlan.getId());
                 return effortRatings;
             }
             
@@ -338,8 +298,6 @@ public class QuarterlyRoadmapV2Controller {
                 if (totalEffort != null && totalEffort > 0) {
                     Integer starRating = calculateStarRating(totalEffort, config);
                     effortRatings.put(epicId, starRating);
-                    logger.info("Auto-filled effort rating: Epic '{}' - {} {} = {} stars", 
-                               epicId, totalEffort, config.getUnitType().toLowerCase(), starRating);
                 }
             }
             
@@ -364,6 +322,19 @@ public class QuarterlyRoadmapV2Controller {
             return 4;
         } else {
             return 5;
+        }
+    }
+
+    /**
+     * Get epic details (initiative and theme information) from backlog
+     */
+    private BacklogEpic getEpicDetails(Long productId, String epicId) {
+        try {
+            Optional<BacklogEpic> epicOpt = backlogEpicRepository.findByProductIdAndEpicId(productId, epicId);
+            return epicOpt.orElse(null);
+        } catch (Exception e) {
+            logger.error("Error fetching epic details for productId: {}, epicId: {}", productId, epicId, e);
+            return null;
         }
     }
     

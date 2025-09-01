@@ -16,7 +16,6 @@ public class CreateOrganizationRequest {
     @Size(max = 1000, message = "Description must not exceed 1000 characters")
     private String description;
     
-    // Constructors
     public CreateOrganizationRequest() {}
     
     public CreateOrganizationRequest(String name, String description) {
@@ -24,7 +23,6 @@ public class CreateOrganizationRequest {
         this.description = description;
     }
     
-    // Getters and Setters
     public String getName() {
         return name;
     }

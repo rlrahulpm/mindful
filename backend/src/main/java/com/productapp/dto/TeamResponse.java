@@ -12,10 +12,8 @@ public class TeamResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
-    // Default constructor
     public TeamResponse() {}
     
-    // Constructor from entity
     public TeamResponse(Team team) {
         this.id = team.getId();
         this.name = team.getName();
@@ -26,7 +24,6 @@ public class TeamResponse {
         this.updatedAt = team.getUpdatedAt();
     }
     
-    // Getters and setters
     public Long getId() {
         return id;
     }

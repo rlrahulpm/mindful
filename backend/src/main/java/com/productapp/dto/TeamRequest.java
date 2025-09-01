@@ -14,17 +14,14 @@ public class TeamRequest {
     
     private Boolean isActive = true;
     
-    // Default constructor
     public TeamRequest() {}
     
-    // Constructor with fields
     public TeamRequest(String name, String description, Boolean isActive) {
         this.name = name;
         this.description = description;
         this.isActive = isActive;
     }
     
-    // Getters and setters
     public String getName() {
         return name;
     }

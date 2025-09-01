@@ -51,7 +51,6 @@ public class Module {
         this.isActive = true;
     }
     
-    // Getters and Setters
     public Long getId() {
         return id;
     }

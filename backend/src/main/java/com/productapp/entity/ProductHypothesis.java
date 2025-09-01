@@ -49,7 +49,6 @@ public class ProductHypothesis {
         this.product = product;
     }
     
-    // Getters and Setters
     public Long getId() {
         return id;
     }

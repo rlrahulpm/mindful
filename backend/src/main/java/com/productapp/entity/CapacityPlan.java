@@ -39,17 +39,14 @@ public class CapacityPlan {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
     
-    // Default constructor
     public CapacityPlan() {}
     
-    // Constructor with basic fields
     public CapacityPlan(Long productId, Integer year, Integer quarter) {
         this.productId = productId;
         this.year = year;
         this.quarter = quarter;
     }
     
-    // Getters and setters
     public Long getId() {
         return id;
     }

@@ -16,7 +16,6 @@ public class UpdateRoleRequest {
         this.productModuleIds = productModuleIds;
     }
     
-    // Getters and Setters
     public String getName() {
         return name;
     }

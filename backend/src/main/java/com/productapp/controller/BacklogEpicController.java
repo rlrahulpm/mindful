@@ -56,7 +56,6 @@ public class BacklogEpicController {
             String token = request.getHeader("Authorization").substring(7);
             Long userId = jwtUtil.getUserIdFromJwtToken(token);
             
-            logger.info("Fetching backlog epics for product ID: {} by user ID: {}", productId, userId);
             
             // Check if user owns the product
             Optional<Product> productOpt = productRepository.findById(productId);
@@ -75,7 +74,6 @@ public class BacklogEpicController {
             
             BacklogEpicResponse response = convertToResponse(productId, epics);
             
-            logger.info("Backlog epics retrieved successfully for product ID: {}", productId);
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
@@ -93,7 +91,6 @@ public class BacklogEpicController {
             String token = httpRequest.getHeader("Authorization").substring(7);
             Long userId = jwtUtil.getUserIdFromJwtToken(token);
             
-            logger.info("Updating backlog epics for product ID: {} by user ID: {}", productId, userId);
             
             // Check if user owns the product
             Optional<Product> productOpt = productRepository.findById(productId);
@@ -151,15 +148,12 @@ public class BacklogEpicController {
             deletedEpicIds.removeAll(newEpicIds);
             
             for (String deletedEpicId : deletedEpicIds) {
-                logger.info("Cascading deletion of epic ID: {} from product ID: {}", deletedEpicId, productId);
                 roadmapItemRepository.deleteByEpicIdAndProductId(deletedEpicId, productId);
                 epicEffortRepository.deleteByEpicIdAndProductId(deletedEpicId, productId);
-                logger.info("Successfully cascaded deletion of epic ID: {}", deletedEpicId);
             }
             
             BacklogEpicResponse response = convertToResponse(productId, newEpics);
             
-            logger.info("Backlog epics updated successfully for product ID: {}", productId);
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
@@ -219,7 +213,6 @@ public class BacklogEpicController {
         private String initiativeName;
         private String track;
         
-        // Getters and setters
         public String getId() { return id; }
         public void setId(String id) { this.id = id; }
         

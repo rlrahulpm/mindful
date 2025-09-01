@@ -3,10 +3,8 @@ package com.productapp.controller;
 import com.productapp.dto.*;
 import com.productapp.entity.*;
 import com.productapp.repository.*;
-import com.productapp.repository.RoadmapItemRepository;
 import com.productapp.security.UserPrincipal;
 import com.productapp.exception.ResourceNotFoundException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,7 +79,6 @@ public class CapacityPlanningController {
     public ResponseEntity<?> getTeams(@PathVariable Long productId, Authentication authentication) {
         try {
             UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-            logger.info("Fetching teams for product ID: {} by user ID: {}", productId, userPrincipal.getId());
             
             if (!hasProductAccess(productId, userPrincipal.getId())) {
                 logger.warn("User {} attempted to access teams for product {} without permission", userPrincipal.getId(), productId);
@@ -93,7 +90,6 @@ public class CapacityPlanningController {
                     .map(TeamResponse::new)
                     .collect(Collectors.toList());
             
-            logger.info("Found {} teams for product ID: {}", teams.size(), productId);
             return ResponseEntity.ok(teamResponses);
             
         } catch (Exception e) {
@@ -107,7 +103,6 @@ public class CapacityPlanningController {
     public ResponseEntity<?> addTeam(@PathVariable Long productId, @Valid @RequestBody TeamRequest request, Authentication authentication) {
         try {
             UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-            logger.info("Adding team to product ID: {} by user ID: {}", productId, userPrincipal.getId());
             
             if (!hasProductAccess(productId, userPrincipal.getId())) {
                 logger.warn("User {} attempted to add team to product {} without permission", userPrincipal.getId(), productId);
@@ -123,7 +118,6 @@ public class CapacityPlanningController {
             team.setIsActive(request.getIsActive() != null ? request.getIsActive() : true);
             team = teamRepository.save(team);
             
-            logger.info("Team {} added successfully for product ID: {}", team.getName(), productId);
             return ResponseEntity.ok(new TeamResponse(team));
             
         } catch (Exception e) {
@@ -137,7 +131,6 @@ public class CapacityPlanningController {
     public ResponseEntity<?> updateTeam(@PathVariable Long productId, @PathVariable Long teamId, @Valid @RequestBody TeamRequest request, Authentication authentication) {
         try {
             UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-            logger.info("Updating team {} for product ID: {} by user ID: {}", teamId, productId, userPrincipal.getId());
             
             if (!hasProductAccess(productId, userPrincipal.getId())) {
                 logger.warn("User {} attempted to update team for product {} without permission", userPrincipal.getId(), productId);
@@ -161,7 +154,6 @@ public class CapacityPlanningController {
             team.setIsActive(request.getIsActive() != null ? request.getIsActive() : team.getIsActive());
             team = teamRepository.save(team);
             
-            logger.info("Team {} updated successfully for product ID: {}", team.getName(), productId);
             return ResponseEntity.ok(new TeamResponse(team));
             
         } catch (Exception e) {
@@ -175,7 +167,6 @@ public class CapacityPlanningController {
     public ResponseEntity<?> deleteTeam(@PathVariable Long productId, @PathVariable Long teamId, Authentication authentication) {
         try {
             UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-            logger.info("Deleting team {} for product ID: {} by user ID: {}", teamId, productId, userPrincipal.getId());
             
             if (!hasProductAccess(productId, userPrincipal.getId())) {
                 logger.warn("User {} attempted to delete team for product {} without permission", userPrincipal.getId(), productId);
@@ -191,7 +182,6 @@ public class CapacityPlanningController {
             team.setIsActive(false);
             teamRepository.save(team);
             
-            logger.info("Team {} deleted successfully for product ID: {}", team.getName(), productId);
             return ResponseEntity.ok().body("Team deleted successfully");
             
         } catch (Exception e) {
@@ -205,7 +195,6 @@ public class CapacityPlanningController {
     public ResponseEntity<?> getCapacityPlan(@PathVariable Long productId, @PathVariable Integer year, @PathVariable Integer quarter, Authentication authentication) {
         try {
             UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-            logger.info("Fetching capacity plan for product ID: {}, Q{} {} by user ID: {}", productId, quarter, year, userPrincipal.getId());
             
             if (!hasProductAccess(productId, userPrincipal.getId())) {
                 logger.warn("User {} attempted to access capacity plan for product {} without permission", userPrincipal.getId(), productId);
@@ -238,7 +227,6 @@ public class CapacityPlanningController {
             CapacityPlanResponse response = new CapacityPlanResponse(capacityPlan, epicEfforts);
             response.setTeams(teams.stream().map(TeamResponse::new).collect(Collectors.toList()));
             
-            logger.info("Capacity plan retrieved for product ID: {}, Q{} {} with {} epic efforts", productId, quarter, year, epicEfforts.size());
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
@@ -252,7 +240,6 @@ public class CapacityPlanningController {
     public ResponseEntity<?> saveCapacityPlan(@PathVariable Long productId, @PathVariable Integer year, @PathVariable Integer quarter, @Valid @RequestBody CapacityPlanRequest request, Authentication authentication) {
         try {
             UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-            logger.info("Saving capacity plan for product ID: {}, Q{} {} by user ID: {}", productId, quarter, year, userPrincipal.getId());
             
             if (!hasProductAccess(productId, userPrincipal.getId())) {
                 logger.warn("User {} attempted to save capacity plan for product {} without permission", userPrincipal.getId(), productId);
@@ -296,7 +283,6 @@ public class CapacityPlanningController {
                 }
             }
             
-            logger.info("Capacity plan saved successfully for product ID: {}, Q{} {}", productId, quarter, year);
             return ResponseEntity.ok().body("Capacity plan saved successfully");
             
         } catch (Exception e) {
@@ -310,7 +296,6 @@ public class CapacityPlanningController {
     public ResponseEntity<?> getEffortRatingConfigs(@PathVariable Long productId, Authentication authentication) {
         try {
             UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-            logger.info("Fetching effort rating configs for product ID: {} by user ID: {}", productId, userPrincipal.getId());
             
             if (!hasProductAccess(productId, userPrincipal.getId())) {
                 logger.warn("User {} attempted to access effort rating configs for product {} without permission", userPrincipal.getId(), productId);
@@ -318,11 +303,8 @@ public class CapacityPlanningController {
             }
             
             List<EffortRatingConfig> configs = effortRatingConfigRepository.findByProductId(productId);
-            logger.info("Found {} existing effort rating configs in database for product ID: {}", configs.size(), productId);
-            
             // If no configs exist, create default ones
             if (configs.isEmpty()) {
-                logger.info("No existing configs found, creating defaults for product ID: {}", productId);
                 EffortRatingConfig sprintsConfig = EffortRatingConfig.createDefaultForSprints(productId);
                 EffortRatingConfig daysConfig = EffortRatingConfig.createDefaultForDays(productId);
                 
@@ -330,20 +312,12 @@ public class CapacityPlanningController {
                 daysConfig = effortRatingConfigRepository.save(daysConfig);
                 
                 configs = List.of(sprintsConfig, daysConfig);
-                logger.info("Created default effort rating configs for product ID: {} - SPRINTS: {}, DAYS: {}", productId, sprintsConfig.getId(), daysConfig.getId());
             }
             
             List<EffortRatingConfigResponse> responses = configs.stream()
                     .map(EffortRatingConfigResponse::new)
                     .collect(Collectors.toList());
             
-            logger.info("Returning {} effort rating configs for product ID: {}", configs.size(), productId);
-            for (EffortRatingConfig config : configs) {
-                logger.info("Config - ID: {}, Unit: {}, 1★≤{}, 2★{}-{}, 3★{}-{}, 4★{}-{}, 5★≥{}", 
-                    config.getId(), config.getUnitType(), config.getStar1Max(), 
-                    config.getStar2Min(), config.getStar2Max(), config.getStar3Min(), config.getStar3Max(),
-                    config.getStar4Min(), config.getStar4Max(), config.getStar5Min());
-            }
             
             return ResponseEntity.ok(responses);
             
@@ -359,7 +333,6 @@ public class CapacityPlanningController {
             @Valid @RequestBody EffortRatingConfigRequest request, Authentication authentication) {
         try {
             UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-            logger.info("Updating effort rating config for product ID: {}, unitType: {} by user ID: {}", productId, unitType, userPrincipal.getId());
             
             if (!hasProductAccess(productId, userPrincipal.getId())) {
                 logger.warn("User {} attempted to update effort rating config for product {} without permission", userPrincipal.getId(), productId);
@@ -395,7 +368,6 @@ public class CapacityPlanningController {
             
             config = effortRatingConfigRepository.save(config);
             
-            logger.info("Effort rating config updated successfully for product ID: {}, unitType: {}", productId, unitType);
             return ResponseEntity.ok(new EffortRatingConfigResponse(config));
             
         } catch (Exception e) {
@@ -409,7 +381,6 @@ public class CapacityPlanningController {
             // Get roadmap for this quarter
             Optional<QuarterlyRoadmap> roadmapOpt = roadmapRepository.findByProductIdAndYearAndQuarter(productId, year, quarter);
             if (roadmapOpt.isEmpty()) {
-                logger.info("No roadmap found for product ID: {}, Q{} {} - skipping epic creation", productId, quarter, year);
                 return;
             }
             
@@ -417,12 +388,8 @@ public class CapacityPlanningController {
             // Get roadmap items from normalized table using explicit query
             List<RoadmapItem> roadmapItems = roadmapItemRepository.findByRoadmapId(roadmap.getId());
             if (roadmapItems == null || roadmapItems.isEmpty()) {
-                logger.info("No roadmap items found for product ID: {}, Q{} {} (roadmap ID: {}) - skipping epic creation", 
-                           productId, quarter, year, roadmap.getId());
                 return;
             }
-            logger.info("Found {} roadmap items for capacity planning in product ID: {}, Q{} {}", 
-                       roadmapItems.size(), productId, quarter, year);
             
             // Get all active teams for this product
             List<Team> teams = teamRepository.findByProductIdAndIsActiveTrue(productId);
@@ -438,8 +405,6 @@ public class CapacityPlanningController {
                         0 // Default to 0 effort days
                     );
                     epicEffortRepository.save(epicEffort);
-                    logger.info("Created default epic effort for epic '{}' and team '{}' in capacity plan ID: {}", 
-                               item.getEpicName(), team.getName(), capacityPlan.getId());
                 }
             }
             
@@ -450,13 +415,10 @@ public class CapacityPlanningController {
 
     private void syncCapacityPlanWithRoadmap(CapacityPlan capacityPlan, Long productId, Integer year, Integer quarter) {
         try {
-            logger.info("Syncing capacity plan ID {} with roadmap for product ID: {}, Q{} {}", 
-                       capacityPlan.getId(), productId, quarter, year);
             
             // Get roadmap for this quarter
             Optional<QuarterlyRoadmap> roadmapOpt = roadmapRepository.findByProductIdAndYearAndQuarter(productId, year, quarter);
             if (roadmapOpt.isEmpty()) {
-                logger.info("No roadmap found for product ID: {}, Q{} {} - no sync needed", productId, quarter, year);
                 return;
             }
             
@@ -464,7 +426,6 @@ public class CapacityPlanningController {
             List<RoadmapItem> roadmapItems = roadmapItemRepository.findByRoadmapId(roadmap.getId());
             
             if (roadmapItems == null || roadmapItems.isEmpty()) {
-                logger.info("No roadmap items found for product ID: {}, Q{} {} - no sync needed", productId, quarter, year);
                 return;
             }
             
@@ -492,14 +453,10 @@ public class CapacityPlanningController {
                         );
                         epicEffortRepository.save(epicEffort);
                         newEffortsCreated++;
-                        logger.info("Synced new epic effort for epic '{}' and team '{}' in capacity plan ID: {}", 
-                                   item.getEpicName(), team.getName(), capacityPlan.getId());
                     }
                 }
             }
             
-            logger.info("Sync completed for capacity plan ID {}: created {} new epic efforts", 
-                       capacityPlan.getId(), newEffortsCreated);
             
         } catch (Exception e) {
             logger.error("Error syncing capacity plan ID {} with roadmap", capacityPlan.getId(), e);

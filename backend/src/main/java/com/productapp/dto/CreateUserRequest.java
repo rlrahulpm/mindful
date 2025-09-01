@@ -29,7 +29,6 @@ public class CreateUserRequest {
         this.organizationId = organizationId;
     }
     
-    // Getters and Setters
     public String getEmail() {
         return email;
     }

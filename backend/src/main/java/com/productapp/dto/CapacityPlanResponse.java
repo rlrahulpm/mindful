@@ -17,10 +17,8 @@ public class CapacityPlanResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
-    // Default constructor
     public CapacityPlanResponse() {}
     
-    // Constructor from entity
     public CapacityPlanResponse(CapacityPlan capacityPlan) {
         this.id = capacityPlan.getId();
         this.productId = capacityPlan.getProductId();
@@ -31,7 +29,6 @@ public class CapacityPlanResponse {
         this.updatedAt = capacityPlan.getUpdatedAt();
     }
     
-    // Constructor with epic efforts
     public CapacityPlanResponse(CapacityPlan capacityPlan, List<EpicEffort> epicEfforts) {
         this(capacityPlan);
         this.epicEfforts = epicEfforts.stream()
@@ -39,7 +36,6 @@ public class CapacityPlanResponse {
                 .collect(Collectors.toList());
     }
     
-    // Getters and setters
     public Long getId() {
         return id;
     }

@@ -51,10 +51,8 @@ public class EffortRatingConfig {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
     
-    // Default constructor
     public EffortRatingConfig() {}
     
-    // Constructor with defaults for sprints
     public static EffortRatingConfig createDefaultForSprints(Long productId) {
         EffortRatingConfig config = new EffortRatingConfig();
         config.setProductId(productId);
@@ -70,7 +68,6 @@ public class EffortRatingConfig {
         return config;
     }
     
-    // Constructor with defaults for days
     public static EffortRatingConfig createDefaultForDays(Long productId) {
         EffortRatingConfig config = new EffortRatingConfig();
         config.setProductId(productId);
@@ -86,7 +83,6 @@ public class EffortRatingConfig {
         return config;
     }
     
-    // Method to calculate star rating based on effort
     public Integer calculateStarRating(Integer totalEffort) {
         if (totalEffort == null || totalEffort == 0) {
             return 1;
@@ -118,7 +114,6 @@ public class EffortRatingConfig {
         return 5;
     }
     
-    // Getters and setters
     public Long getId() {
         return id;
     }

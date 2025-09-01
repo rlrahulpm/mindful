@@ -21,17 +21,14 @@ public class CapacityPlanRequest {
     
     private List<EpicEffortRequest> epicEfforts;
     
-    // Default constructor
     public CapacityPlanRequest() {}
     
-    // Constructor with fields
     public CapacityPlanRequest(Integer year, Integer quarter, List<EpicEffortRequest> epicEfforts) {
         this.year = year;
         this.quarter = quarter;
         this.epicEfforts = epicEfforts;
     }
     
-    // Getters and setters
     public Integer getYear() {
         return year;
     }

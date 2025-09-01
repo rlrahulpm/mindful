@@ -14,14 +14,12 @@ import com.productapp.entity.Product;
 import com.productapp.entity.ProductModule;
 import com.productapp.entity.Module;
 import com.productapp.entity.User;
-import com.productapp.entity.Role;
 import com.productapp.exception.ResourceNotFoundException;
 import com.productapp.exception.UnauthorizedException;
 import com.productapp.repository.ProductRepository;
 import com.productapp.repository.ProductModuleRepository;
 import com.productapp.repository.ModuleRepository;
 import com.productapp.repository.UserRepository;
-import com.productapp.repository.RoleRepository;
 import com.productapp.security.UserPrincipal;
 import com.productapp.util.SlugUtil;
 import org.slf4j.Logger;
@@ -57,9 +55,6 @@ public class ProductController {
     @Autowired
     private UserRepository userRepository;
     
-    @Autowired
-    private RoleRepository roleRepository;
-    
     @PostMapping
     @Operation(summary = "Create a new product", description = "Create a new product for the authenticated user")
     @ApiResponses(value = {
@@ -71,7 +66,6 @@ public class ProductController {
     public ResponseEntity<?> createProduct(@Valid @RequestBody ProductRequest productRequest, 
                                          Authentication authentication) {
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-        logger.info("Creating product '{}' for user ID: {}", productRequest.getProductName(), userPrincipal.getId());
         
         User user = userRepository.findById(userPrincipal.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userPrincipal.getId()));
@@ -79,16 +73,12 @@ public class ProductController {
         Product product = new Product(productRequest.getProductName(), user);
         product.setOrganization(user.getOrganization()); // Set organization from user
         Product savedProduct = productRepository.save(product);
-        logger.info("Product created successfully with ID: {}", savedProduct.getId());
-        
         // Automatically create product-module associations with all active modules
         List<Module> activeModules = moduleRepository.findByIsActiveTrueOrderByDisplayOrder();
-        logger.info("Found {} active modules to associate with product ID: {}", activeModules.size(), savedProduct.getId());
         
         for (Module module : activeModules) {
             ProductModule productModule = new ProductModule(savedProduct, module);
             productModuleRepository.save(productModule);
-            logger.info("Created product-module association: Product ID {} with Module ID {}", savedProduct.getId(), module.getId());
         }
         
         ProductResponse response = new ProductResponse(savedProduct.getId(), 
@@ -107,7 +97,6 @@ public class ProductController {
     })
     public ResponseEntity<List<ProductResponse>> getUserProducts(Authentication authentication) {
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-        logger.info("Fetching products for user ID: {}", userPrincipal.getId());
         
         // Get user to check their role
         User user = userRepository.findById(userPrincipal.getId())
@@ -119,12 +108,9 @@ public class ProductController {
         List<Product> ownedProducts = productRepository.findByUserIdAndOrganizationId(
             userPrincipal.getId(), user.getOrganization().getId());
         accessibleProducts.addAll(ownedProducts);
-        logger.info("User owns {} products in their organization", ownedProducts.size());
         
         // 2. Add products accessible through role permissions (within same organization)
         if (user.getRole() != null) {
-            logger.info("User has role: {}", user.getRole().getName());
-            
             // Get all product-modules associated with the user's role
             Set<ProductModule> roleProductModules = user.getRole().getProductModules();
             
@@ -136,8 +122,6 @@ public class ProductController {
                     .collect(Collectors.toSet());
             
             accessibleProducts.addAll(roleAccessibleProducts);
-            logger.info("User has access to {} additional products through role in their organization", 
-                       roleAccessibleProducts.size());
         }
         
         // Convert to response DTOs
@@ -152,7 +136,6 @@ public class ProductController {
                 .sorted((a, b) -> a.getProductName().compareToIgnoreCase(b.getProductName()))
                 .collect(Collectors.toList());
         
-        logger.info("Returning total of {} accessible products for user ID: {}", productResponses.size(), userPrincipal.getId());
         return ResponseEntity.ok(productResponses);
     }
     
@@ -170,7 +153,6 @@ public class ProductController {
             @PathVariable String slug, 
             Authentication authentication) {
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-        logger.info("Fetching product by slug: {} for user ID: {}", slug, userPrincipal.getId());
         
         // Get user for organization ID
         User user = userRepository.findById(userPrincipal.getId())
@@ -194,15 +176,11 @@ public class ProductController {
         // Check if user owns the product
         if (product.getUser().getId().equals(userPrincipal.getId())) {
             hasAccess = true;
-            logger.info("User owns product: {}", product.getProductName());
         }
         // Check if user has role-based access to the product
         else if (user.getRole() != null) {
             hasAccess = user.getRole().getProductModules().stream()
                     .anyMatch(pm -> pm.getProduct().getId().equals(product.getId()));
-            if (hasAccess) {
-                logger.info("User has role-based access to product: {}", product.getProductName());
-            }
         }
         
         if (!hasAccess) {
@@ -211,7 +189,6 @@ public class ProductController {
             throw new UnauthorizedException("You are not authorized to access this product");
         }
         
-        logger.info("Product '{}' fetched successfully for user ID: {}", product.getProductName(), userPrincipal.getId());
         ProductResponse response = new ProductResponse(product.getId(), 
                                                        product.getProductName(), 
                                                        product.getCreatedAt());
@@ -233,7 +210,6 @@ public class ProductController {
             @PathVariable Long id, 
             Authentication authentication) {
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-        logger.info("Fetching product ID: {} for user ID: {}", id, userPrincipal.getId());
         
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
@@ -247,15 +223,11 @@ public class ProductController {
         // Check if user owns the product
         if (product.getUser().getId().equals(userPrincipal.getId())) {
             hasAccess = true;
-            logger.info("User owns product ID: {}", id);
         }
         // Check if user has role-based access to the product
         else if (user.getRole() != null) {
             hasAccess = user.getRole().getProductModules().stream()
                     .anyMatch(pm -> pm.getProduct().getId().equals(id));
-            if (hasAccess) {
-                logger.info("User has role-based access to product ID: {}", id);
-            }
         }
         
         if (!hasAccess) {
@@ -264,7 +236,6 @@ public class ProductController {
             throw new UnauthorizedException("You are not authorized to access this product");
         }
         
-        logger.info("Product ID: {} fetched successfully for user ID: {}", id, userPrincipal.getId());
         ProductResponse response = new ProductResponse(product.getId(), 
                                                        product.getProductName(), 
                                                        product.getCreatedAt());
@@ -287,7 +258,6 @@ public class ProductController {
             @Valid @RequestBody ProductRequest productRequest,
             Authentication authentication) {
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-        logger.info("Updating product ID: {} for user ID: {}", id, userPrincipal.getId());
         
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
@@ -300,7 +270,6 @@ public class ProductController {
         
         product.setProductName(productRequest.getProductName());
         Product updatedProduct = productRepository.save(product);
-        logger.info("Product ID: {} updated successfully for user ID: {}", id, userPrincipal.getId());
         
         ProductResponse response = new ProductResponse(updatedProduct.getId(), 
                                                        updatedProduct.getProductName(), 
@@ -322,7 +291,6 @@ public class ProductController {
             @PathVariable Long id,
             Authentication authentication) {
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-        logger.info("Deleting product ID: {} for user ID: {}", id, userPrincipal.getId());
         
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
@@ -334,7 +302,6 @@ public class ProductController {
         }
         
         productRepository.delete(product);
-        logger.info("Product ID: {} deleted successfully for user ID: {}", id, userPrincipal.getId());
         
         return ResponseEntity.ok("Product deleted successfully");
     }

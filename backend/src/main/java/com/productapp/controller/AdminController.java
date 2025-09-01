@@ -173,9 +173,6 @@ public class AdminController {
         User currentUser = userRepository.findById(userPrincipal.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userPrincipal.getId()));
         
-        logger.info("User {} (ID: {}) requesting roles. IsGlobalSuperadmin: {}, Organization: {}",
-                   currentUser.getEmail(), currentUser.getId(), currentUser.getIsGlobalSuperadmin(),
-                   currentUser.getOrganization() != null ? currentUser.getOrganization().getId() : "NULL");
         
         List<Role> roles;
         // Both global superadmins and organization superadmins should only see roles used in their organization
@@ -191,13 +188,6 @@ public class AdminController {
                 .distinct()
                 .collect(Collectors.toList());
         
-        if (currentUser.getIsGlobalSuperadmin() != null && currentUser.getIsGlobalSuperadmin()) {
-            logger.info("Global superadmin - returning {} roles used in their organization {} (restricted access)", 
-                       roles.size(), currentUser.getOrganization().getId());
-        } else {
-            logger.info("Organization superadmin - returning {} roles used in organization {}", 
-                       roles.size(), currentUser.getOrganization().getId());
-        }
         
         List<RoleResponse> response = roles.stream()
                 .map(role -> convertToRoleResponse(role, currentUser))
@@ -218,10 +208,6 @@ public class AdminController {
         User currentUser = userRepository.findById(userPrincipal.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userPrincipal.getId()));
         
-        logger.info("User {} (ID: {}) creating role '{}'. IsGlobalSuperadmin: {}, Organization: {}", 
-                currentUser.getEmail(), currentUser.getId(), request.getName(),
-                currentUser.getIsGlobalSuperadmin(), 
-                currentUser.getOrganization() != null ? currentUser.getOrganization().getId() : "NULL");
         
         if (roleRepository.existsByName(request.getName())) {
             throw new IllegalArgumentException("Role with name '" + request.getName() + "' already exists");
@@ -231,7 +217,6 @@ public class AdminController {
         
         // Add product modules to role with organization validation
         if (request.getProductModuleIds() != null && !request.getProductModuleIds().isEmpty()) {
-            logger.info("Processing {} product module IDs for role creation", request.getProductModuleIds().size());
             
             Set<ProductModule> productModules = request.getProductModuleIds().stream()
                     .map(productModuleId -> {
@@ -251,17 +236,13 @@ public class AdminController {
                             throw new IllegalArgumentException("ProductModule " + productModuleId + " does not belong to your organization");
                         }
                         
-                        logger.info("Validated ProductModule ID: {} belongs to organization: {}", 
-                                productModuleId, pm.getProduct().getOrganization().getId());
                         return pm;
                     })
                     .collect(Collectors.toSet());
             role.setProductModules(productModules);
-            logger.info("Successfully validated and assigned {} product modules to role", productModules.size());
         }
         
         role = roleRepository.save(role);
-        logger.info("Role '{}' created successfully with ID: {}", role.getName(), role.getId());
         
         return ResponseEntity.ok(convertToRoleResponse(role, currentUser));
     }
@@ -329,9 +310,6 @@ public class AdminController {
         User currentUser = userRepository.findById(userPrincipal.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userPrincipal.getId()));
         
-        logger.info("User {} (ID: {}) requesting users. IsGlobalSuperadmin: {}, Organization: {}", 
-                   currentUser.getEmail(), currentUser.getId(), currentUser.getIsGlobalSuperadmin(),
-                   currentUser.getOrganization() != null ? currentUser.getOrganization().getId() : "NULL");
         
         List<User> users;
         // Both global superadmins and organization superadmins can only see users in their organization
@@ -340,30 +318,11 @@ public class AdminController {
         }
         users = userRepository.findByOrganizationId(currentUser.getOrganization().getId());
         
-        if (currentUser.getIsGlobalSuperadmin() != null && currentUser.getIsGlobalSuperadmin()) {
-            logger.info("Global superadmin - returning {} users from their organization {} (restricted access)", 
-                       users.size(), currentUser.getOrganization().getId());
-        } else {
-            logger.info("Organization superadmin - returning {} users from organization {}", 
-                       users.size(), currentUser.getOrganization().getId());
-        }
         
         List<UserResponse> response = users.stream()
-                .map(user -> {
-                    logger.info("Processing user: email={}, id={}, roleId={}, roleName={}", 
-                               user.getEmail(), user.getId(), 
-                               user.getRole() != null ? user.getRole().getId() : "NULL",
-                               user.getRole() != null ? user.getRole().getName() : "NULL");
-                    return convertToUserResponse(user, currentUser);
-                })
+                .map(user -> convertToUserResponse(user, currentUser))
                 .collect(Collectors.toList());
         
-        logger.info("Final response contains {} users", response.size());
-        response.forEach(userResp -> {
-            logger.info("Response user: email={}, roleResponseName={}", 
-                       userResp.getEmail(), 
-                       userResp.getRole() != null ? userResp.getRole().getName() : "NULL");
-        });
         
         return ResponseEntity.ok(response);
     }
@@ -380,10 +339,6 @@ public class AdminController {
         User currentUser = userRepository.findById(userPrincipal.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userPrincipal.getId()));
         
-        logger.info("User {} (ID: {}) creating user '{}'. IsGlobalSuperadmin: {}, Organization: {}", 
-                currentUser.getEmail(), currentUser.getId(), request.getEmail(),
-                currentUser.getIsGlobalSuperadmin(), 
-                currentUser.getOrganization() != null ? currentUser.getOrganization().getId() : "NULL");
         
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException("User with email '" + request.getEmail() + "' already exists");
@@ -395,7 +350,6 @@ public class AdminController {
         }
         
         Organization organization = currentUser.getOrganization();
-        logger.info("Assigning new user to organization: {} ({})", organization.getId(), organization.getName());
         
         User user = new User();
         user.setEmail(request.getEmail());
@@ -419,11 +373,9 @@ public class AdminController {
             }
             
             user.setRole(role);
-            logger.info("Assigned role '{}' (ID: {}) to new user", role.getName(), role.getId());
         }
         
         user = userRepository.save(user);
-        logger.info("User '{}' created successfully with ID: {}", user.getEmail(), user.getId());
         
         return ResponseEntity.ok(convertToUserResponse(user));
     }
@@ -482,13 +434,6 @@ public class AdminController {
         }
         productModules = productModuleRepository.findByProductOrganizationId(currentUser.getOrganization().getId());
         
-        if (currentUser.getIsGlobalSuperadmin() != null && currentUser.getIsGlobalSuperadmin()) {
-            logger.info("Global superadmin - returning {} product modules from their organization {} (restricted access)", 
-                       productModules.size(), currentUser.getOrganization().getId());
-        } else {
-            logger.info("Organization superadmin - returning {} product modules from organization {}", 
-                       productModules.size(), currentUser.getOrganization().getId());
-        }
         
         List<ProductModuleResponse> response = productModules.stream()
                 .map(this::convertToProductModuleResponse)

@@ -10,7 +10,6 @@ public class UpdateUserRequest {
         this.roleId = roleId;
     }
     
-    // Getters and Setters
     public Long getRoleId() {
         return roleId;
     }

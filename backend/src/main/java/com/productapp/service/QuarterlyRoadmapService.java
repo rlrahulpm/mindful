@@ -29,9 +29,6 @@ public class QuarterlyRoadmapService {
 
     @Transactional
     public QuarterlyRoadmap createOrUpdateRoadmap(Long productId, QuarterlyRoadmapRequest request) {
-        logger.info("Service: Creating/updating roadmap for product ID: {}, year: {}, quarter: {} with {} items", 
-                   productId, request.getYear(), request.getQuarter(), 
-                   request.getRoadmapItems() != null ? request.getRoadmapItems().size() : 0);
 
         // Find or create roadmap
         Optional<QuarterlyRoadmap> existingRoadmapOpt = quarterlyRoadmapRepository
@@ -40,7 +37,6 @@ public class QuarterlyRoadmapService {
         QuarterlyRoadmap roadmap;
         if (existingRoadmapOpt.isPresent()) {
             roadmap = existingRoadmapOpt.get();
-            logger.info("Service: Found existing roadmap with ID: {}", roadmap.getId());
             // Delete existing items first
             roadmapItemRepository.deleteByRoadmapId(roadmap.getId());
         } else {
@@ -48,16 +44,13 @@ public class QuarterlyRoadmapService {
             roadmap.setProductId(productId);
             roadmap.setYear(request.getYear());
             roadmap.setQuarter(request.getQuarter());
-            logger.info("Service: Creating new roadmap for product ID: {}", productId);
         }
         
         // Save roadmap first to ensure we have an ID
         roadmap = quarterlyRoadmapRepository.save(roadmap);
-        logger.info("Service: Saved roadmap with ID: {}", roadmap.getId());
         
         // Convert and save new items
         if (request.getRoadmapItems() != null && !request.getRoadmapItems().isEmpty()) {
-            logger.info("Service: Processing {} roadmap items", request.getRoadmapItems().size());
             for (QuarterlyRoadmapRequest.RoadmapItem requestItem : request.getRoadmapItems()) {
                 RoadmapItem item = new RoadmapItem();
                 item.setRoadmap(roadmap);
@@ -74,6 +67,11 @@ public class QuarterlyRoadmapService {
                 item.setRiceScore(requestItem.getRiceScore());
                 item.setEffortRating(requestItem.getEffortRating());
                 
+                // Set initiative and theme information if provided
+                item.setInitiativeName(requestItem.getInitiativeName());
+                item.setThemeName(requestItem.getThemeName());
+                item.setThemeColor(requestItem.getThemeColor());
+                
                 // Parse dates if provided
                 if (requestItem.getStartDate() != null && !requestItem.getStartDate().isEmpty()) {
                     item.setStartDate(LocalDate.parse(requestItem.getStartDate(), DATE_FORMATTER));
@@ -84,7 +82,6 @@ public class QuarterlyRoadmapService {
                 
                 // Save each item individually to ensure proper persistence
                 RoadmapItem savedItem = roadmapItemRepository.save(item);
-                logger.info("Service: Saved roadmap item with ID: {} for epic: {}", savedItem.getId(), savedItem.getEpicId());
             }
         }
         
@@ -92,7 +89,6 @@ public class QuarterlyRoadmapService {
         quarterlyRoadmapRepository.flush();
         roadmapItemRepository.flush();
         
-        logger.info("Service: Transaction completed successfully for roadmap ID: {}", roadmap.getId());
         return roadmap;
     }
 }

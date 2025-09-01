@@ -57,7 +57,6 @@ public class MarketCompetitionController {
             Authentication authentication) {
         
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-        logger.info("Fetching market competition data for product ID: {} by user ID: {}", productId, userPrincipal.getId());
         
         // Verify user has access to the product
         if (!hasProductAccess(productId, userPrincipal.getId())) {
@@ -87,7 +86,6 @@ public class MarketCompetitionController {
                 marketCompetition.getUpdatedAt()
         );
         
-        logger.info("Market competition data retrieved successfully for product ID: {}", productId);
         return ResponseEntity.ok(response);
     }
     
@@ -107,7 +105,6 @@ public class MarketCompetitionController {
             Authentication authentication) {
         
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-        logger.info("Saving market competition data for product ID: {} by user ID: {}", productId, userPrincipal.getId());
         
         // Verify user has access to the product
         if (!hasProductAccess(productId, userPrincipal.getId())) {
@@ -131,7 +128,6 @@ public class MarketCompetitionController {
         marketCompetition.setMarketTrends(request.getMarketTrends());
         
         MarketCompetition savedMarketCompetition = marketCompetitionRepository.save(marketCompetition);
-        logger.info("Market competition data saved successfully for product ID: {}", productId);
         
         MarketCompetitionResponse response = new MarketCompetitionResponse(
                 savedMarketCompetition.getId(),

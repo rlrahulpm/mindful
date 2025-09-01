@@ -15,10 +15,8 @@ public class EpicEffortResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
-    // Default constructor
     public EpicEffortResponse() {}
     
-    // Constructor from entity
     public EpicEffortResponse(EpicEffort epicEffort) {
         this.id = epicEffort.getId();
         this.capacityPlanId = epicEffort.getCapacityPlanId();
@@ -35,7 +33,6 @@ public class EpicEffortResponse {
         }
     }
     
-    // Getters and setters
     public Long getId() {
         return id;
     }

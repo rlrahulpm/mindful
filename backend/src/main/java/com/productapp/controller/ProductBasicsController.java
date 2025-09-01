@@ -57,7 +57,6 @@ public class ProductBasicsController {
             Authentication authentication) {
         
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-        logger.info("Fetching product basics for product ID: {} by user ID: {}", productId, userPrincipal.getId());
         
         // Verify user has access to the product
         if (!hasProductAccess(productId, userPrincipal.getId())) {
@@ -84,7 +83,6 @@ public class ProductBasicsController {
                 productBasics.getUpdatedAt()
         );
         
-        logger.info("Product basics retrieved successfully for product ID: {}", productId);
         return ResponseEntity.ok(response);
     }
     
@@ -104,7 +102,6 @@ public class ProductBasicsController {
             Authentication authentication) {
         
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-        logger.info("Saving product basics for product ID: {} by user ID: {}", productId, userPrincipal.getId());
         
         // Verify user has access to the product
         if (!hasProductAccess(productId, userPrincipal.getId())) {
@@ -125,7 +122,6 @@ public class ProductBasicsController {
         productBasics.setGoals(request.getGoals());
         
         ProductBasics savedProductBasics = productBasicsRepository.save(productBasics);
-        logger.info("Product basics saved successfully for product ID: {}", productId);
         
         ProductBasicsResponse response = new ProductBasicsResponse(
                 savedProductBasics.getId(),

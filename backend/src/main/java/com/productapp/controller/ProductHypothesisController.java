@@ -57,7 +57,6 @@ public class ProductHypothesisController {
             Authentication authentication) {
         
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-        logger.info("Fetching product hypothesis for product ID: {} by user ID: {}", productId, userPrincipal.getId());
         
         // Verify user has access to the product
         if (!hasProductAccess(productId, userPrincipal.getId())) {
@@ -86,7 +85,6 @@ public class ProductHypothesisController {
                 productHypothesis.getUpdatedAt()
         );
         
-        logger.info("Product hypothesis retrieved successfully for product ID: {}", productId);
         return ResponseEntity.ok(response);
     }
     
@@ -106,7 +104,6 @@ public class ProductHypothesisController {
             Authentication authentication) {
         
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-        logger.info("Saving product hypothesis for product ID: {} by user ID: {}", productId, userPrincipal.getId());
         
         // Verify user has access to the product
         if (!hasProductAccess(productId, userPrincipal.getId())) {
@@ -129,7 +126,6 @@ public class ProductHypothesisController {
         productHypothesis.setThemes(request.getThemes());
         
         ProductHypothesis savedProductHypothesis = productHypothesisRepository.save(productHypothesis);
-        logger.info("Product hypothesis saved successfully for product ID: {}", productId);
         
         ProductHypothesisResponse response = new ProductHypothesisResponse(
                 savedProductHypothesis.getId(),

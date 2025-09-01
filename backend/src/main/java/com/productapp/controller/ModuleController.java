@@ -68,7 +68,6 @@ public class ModuleController {
         
         try {
             UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-            logger.info("Fetching modules for product ID: {} by user ID: {}", productId, userPrincipal.getId());
             
             // Verify product exists and user has access
             Product product = productRepository.findById(productId)
@@ -83,14 +82,12 @@ public class ModuleController {
             // Check if user owns the product
             if (product.getUser().getId().equals(userPrincipal.getId())) {
                 hasAccess = true;
-                logger.info("User owns product ID: {}", productId);
             }
             // Check if user has role-based access to the product
             else if (user.getRole() != null) {
                 hasAccess = user.getRole().getProductModules().stream()
                         .anyMatch(pm -> pm.getProduct().getId().equals(productId));
                 if (hasAccess) {
-                    logger.info("User has role-based access to product ID: {}", productId);
                 }
             }
             
@@ -109,23 +106,19 @@ public class ModuleController {
                 productModules = allProductModules.stream()
                         .filter(pm -> pm.getProduct().getId().equals(productId) && pm.getIsEnabled())
                         .collect(Collectors.toList());
-                logger.info("User owns product - returning all {} modules", productModules.size());
             }
             // If user has role-based access, they only get modules they have permission for
             else {
                 productModules = user.getRole().getProductModules().stream()
                         .filter(pm -> pm.getProduct().getId().equals(productId) && pm.getIsEnabled())
                         .collect(Collectors.toList());
-                logger.info("User has role-based access - returning {} permitted modules", productModules.size());
             }
             
-            logger.info("Found {} product modules for product ID: {}", productModules.size(), productId);
             
             List<ProductModuleResponse> response = productModules.stream()
                     .map(this::convertToProductModuleResponse)
                     .collect(Collectors.toList());
             
-            logger.info("Returning {} modules for product ID: {}", response.size(), productId);
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {

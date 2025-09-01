@@ -14,7 +14,6 @@ public class OrganizationResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
-    // Constructors
     public OrganizationResponse() {}
     
     public OrganizationResponse(Long id, String name, String description, int userCount, int productCount, LocalDateTime createdAt, LocalDateTime updatedAt) {
@@ -27,7 +26,6 @@ public class OrganizationResponse {
         this.updatedAt = updatedAt;
     }
     
-    // Getters and Setters
     public Long getId() {
         return id;
     }

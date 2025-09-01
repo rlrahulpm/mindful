@@ -21,7 +21,6 @@ public class ProductBasicsRequest {
         this.goals = goals;
     }
     
-    // Getters and Setters
     public String getVision() {
         return vision;
     }

@@ -18,7 +18,6 @@ public class QuarterlyRoadmapRequest {
         this.roadmapItems = roadmapItems;
     }
     
-    // Getters and Setters
     public Long getProductId() {
         return productId;
     }
@@ -67,6 +66,9 @@ public class QuarterlyRoadmapRequest {
         private Integer effortRating;
         private String startDate;
         private String endDate;
+        private String initiativeName;
+        private String themeName;
+        private String themeColor;
         
         public RoadmapItem() {
         }
@@ -86,7 +88,6 @@ public class QuarterlyRoadmapRequest {
             this.riceScore = riceScore;
         }
         
-        // Getters and Setters
         public String getEpicId() {
             return epicId;
         }
@@ -205,6 +206,30 @@ public class QuarterlyRoadmapRequest {
         
         public void setEndDate(String endDate) {
             this.endDate = endDate;
+        }
+        
+        public String getInitiativeName() {
+            return initiativeName;
+        }
+        
+        public void setInitiativeName(String initiativeName) {
+            this.initiativeName = initiativeName;
+        }
+        
+        public String getThemeName() {
+            return themeName;
+        }
+        
+        public void setThemeName(String themeName) {
+            this.themeName = themeName;
+        }
+        
+        public String getThemeColor() {
+            return themeColor;
+        }
+        
+        public void setThemeColor(String themeColor) {
+            this.themeColor = themeColor;
         }
     }
 }

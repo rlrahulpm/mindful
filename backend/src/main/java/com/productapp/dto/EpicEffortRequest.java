@@ -21,10 +21,8 @@ public class EpicEffortRequest {
     
     private String notes;
     
-    // Default constructor
     public EpicEffortRequest() {}
     
-    // Constructor with fields
     public EpicEffortRequest(String epicId, String epicName, Long teamId, Integer effortDays, String notes) {
         this.epicId = epicId;
         this.epicName = epicName;
@@ -33,7 +31,6 @@ public class EpicEffortRequest {
         this.notes = notes;
     }
     
-    // Getters and setters
     public String getEpicId() {
         return epicId;
     }

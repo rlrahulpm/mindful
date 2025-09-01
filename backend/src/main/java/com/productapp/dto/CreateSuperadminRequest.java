@@ -26,7 +26,6 @@ public class CreateSuperadminRequest {
     @Schema(description = "Whether this user should be a global superadmin (can manage all organizations)", example = "false")
     private boolean isGlobalSuperadmin = false;
     
-    // Constructors
     public CreateSuperadminRequest() {}
     
     public CreateSuperadminRequest(String email, String password, Long organizationId, boolean isGlobalSuperadmin) {
@@ -36,7 +35,6 @@ public class CreateSuperadminRequest {
         this.isGlobalSuperadmin = isGlobalSuperadmin;
     }
     
-    // Getters and Setters
     public String getEmail() {
         return email;
     }

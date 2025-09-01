@@ -32,7 +32,6 @@ public class Organization {
     @OneToMany(mappedBy = "organization", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Product> products;
     
-    // Constructors
     public Organization() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
@@ -44,7 +43,6 @@ public class Organization {
         this.description = description;
     }
     
-    // Getters and Setters
     public Long getId() {
         return id;
     }

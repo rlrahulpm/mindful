@@ -18,10 +18,8 @@ public class EffortRatingConfigResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
-    // Default constructor
     public EffortRatingConfigResponse() {}
     
-    // Constructor from entity
     public EffortRatingConfigResponse(EffortRatingConfig config) {
         this.id = config.getId();
         this.productId = config.getProductId();
@@ -38,7 +36,6 @@ public class EffortRatingConfigResponse {
         this.updatedAt = config.getUpdatedAt();
     }
     
-    // Getters and setters
     public Long getId() {
         return id;
     }

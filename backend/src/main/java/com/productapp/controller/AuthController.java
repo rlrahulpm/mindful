@@ -9,9 +9,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import com.productapp.dto.AuthResponse;
 import com.productapp.dto.LoginRequest;
-import com.productapp.dto.SignupRequest;
 import com.productapp.entity.User;
-import com.productapp.exception.DuplicateResourceException;
 import com.productapp.repository.UserRepository;
 import com.productapp.security.UserPrincipal;
 import com.productapp.util.JwtUtil;
@@ -40,33 +38,7 @@ public class AuthController {
     @Autowired
     private JwtUtil jwtUtil;
     
-    // Signup disabled - users are created by admins only
-    /*
-    @PostMapping("/signup")
-    @Operation(summary = "Register a new user", description = "Create a new user account with email and password")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "User registered successfully",
-                content = @Content(schema = @Schema(implementation = AuthResponse.class))),
-        @ApiResponse(responseCode = "400", description = "Invalid input or email already exists",
-                content = @Content)
-    })
-    public ResponseEntity<?> registerUser(@Valid @RequestBody SignupRequest signUpRequest) {
-        logger.info("User signup attempt for email: {}", signUpRequest.getEmail());
-        
-        if (userRepository.existsByEmail(signUpRequest.getEmail())) {
-            logger.warn("Signup failed - email already exists: {}", signUpRequest.getEmail());
-            throw new DuplicateResourceException("Email is already in use");
-        }
-        
-        User user = new User(signUpRequest.getEmail(),
-                           passwordEncoder.encode(signUpRequest.getPassword()));
-        
-        User savedUser = userRepository.save(user);
-        logger.info("User registered successfully with ID: {}", savedUser.getId());
-        
-        return ResponseEntity.ok(new AuthResponse("User registered successfully"));
-    }
-    */
+    // Note: User signup is disabled - users are created by admins only
     
     @PostMapping("/login")
     @Operation(summary = "Login user", description = "Authenticate user and return JWT token")
@@ -77,7 +49,6 @@ public class AuthController {
                 content = @Content)
     })
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
-        logger.info("Login attempt for email: {}", loginRequest.getEmail());
         
         User user = userRepository.findByEmail(loginRequest.getEmail())
                 .orElse(null);
@@ -89,7 +60,6 @@ public class AuthController {
         
         String jwt = jwtUtil.generateJwtToken(user.getEmail(), user.getId(), 
             user.getOrganization().getId(), user.getIsSuperadmin(), user.getIsGlobalSuperadmin());
-        logger.info("User logged in successfully: {}", user.getEmail());
         
         return ResponseEntity.ok(new AuthResponse(jwt, user.getId(), user.getEmail(), user.getIsSuperadmin()));
     }
@@ -110,7 +80,6 @@ public class AuthController {
         
         String newToken = jwtUtil.generateJwtToken(user.getEmail(), user.getId(), 
             user.getOrganization().getId(), user.getIsSuperadmin(), user.getIsGlobalSuperadmin());
-        logger.info("Token refreshed for user: {}", user.getEmail());
         
         return ResponseEntity.ok(new AuthResponse(newToken, user.getId(), user.getEmail(), user.getIsSuperadmin()));
     }

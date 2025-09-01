@@ -41,10 +41,8 @@ public class EffortRatingConfigRequest {
     @Min(value = 1, message = "Star 5 min must be at least 1")
     private Integer star5Min;
     
-    // Default constructor
     public EffortRatingConfigRequest() {}
     
-    // Getters and setters
     public String getUnitType() {
         return unitType;
     }

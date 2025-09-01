@@ -39,17 +39,14 @@ public class Team {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
     
-    // Default constructor
     public Team() {}
     
-    // Constructor with basic fields
     public Team(String name, String description, Long productId) {
         this.name = name;
         this.description = description;
         this.productId = productId;
     }
     
-    // Getters and setters
     public Long getId() {
         return id;
     }

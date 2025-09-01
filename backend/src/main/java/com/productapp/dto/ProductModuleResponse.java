@@ -23,7 +23,6 @@ public class ProductModuleResponse {
         this.createdAt = createdAt;
     }
     
-    // Getters and Setters
     public Long getId() {
         return id;
     }

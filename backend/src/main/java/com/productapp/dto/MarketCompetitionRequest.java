@@ -22,7 +22,6 @@ public class MarketCompetitionRequest {
     @Size(max = 10000, message = "Market trends description cannot exceed 10000 characters")
     private String marketTrends;
     
-    // Getters and Setters
     public String getMarketSize() {
         return marketSize;
     }

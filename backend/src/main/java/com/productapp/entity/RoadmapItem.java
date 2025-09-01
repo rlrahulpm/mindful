@@ -58,6 +58,15 @@ public class RoadmapItem {
     @Column(name = "end_date")
     private LocalDate endDate;
     
+    @Column(name = "initiative_name")
+    private String initiativeName;
+    
+    @Column(name = "theme_name")
+    private String themeName;
+    
+    @Column(name = "theme_color", length = 7)
+    private String themeColor;
+    
     @Column(name = "created_at")
     private LocalDateTime createdAt;
     
@@ -75,10 +84,8 @@ public class RoadmapItem {
         updatedAt = LocalDateTime.now();
     }
     
-    // Constructors
     public RoadmapItem() {}
     
-    // Getters and Setters
     public Long getId() {
         return id;
     }
@@ -221,5 +228,29 @@ public class RoadmapItem {
     
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+    
+    public String getInitiativeName() {
+        return initiativeName;
+    }
+    
+    public void setInitiativeName(String initiativeName) {
+        this.initiativeName = initiativeName;
+    }
+    
+    public String getThemeName() {
+        return themeName;
+    }
+    
+    public void setThemeName(String themeName) {
+        this.themeName = themeName;
+    }
+    
+    public String getThemeColor() {
+        return themeColor;
+    }
+    
+    public void setThemeColor(String themeColor) {
+        this.themeColor = themeColor;
     }
 }

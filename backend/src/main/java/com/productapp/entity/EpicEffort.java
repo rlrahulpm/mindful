@@ -50,10 +50,8 @@ public class EpicEffort {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
     
-    // Default constructor
     public EpicEffort() {}
     
-    // Constructor with basic fields
     public EpicEffort(Long capacityPlanId, String epicId, String epicName, Long teamId, Integer effortDays) {
         this.capacityPlanId = capacityPlanId;
         this.epicId = epicId;
@@ -62,7 +60,6 @@ public class EpicEffort {
         this.effortDays = effortDays;
     }
     
-    // Getters and setters
     public Long getId() {
         return id;
     }

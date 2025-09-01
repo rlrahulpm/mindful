@@ -25,7 +25,6 @@ public class ModuleResponse {
         this.createdAt = createdAt;
     }
     
-    // Getters and Setters
     public Long getModuleId() {
         return moduleId;
     }

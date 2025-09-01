@@ -189,11 +189,11 @@ const RoadmapVisualization: React.FC = () => {
           <h2>Error</h2>
           <p>{error || productError}</p>
           <div className="error-actions">
-            <button onClick={() => setError('')} className="btn btn-secondary">
+            <button onClick={() => setError('')} className="roadmap-viz-btn roadmap-viz-btn-secondary">
               <span className="material-icons">refresh</span>
               Try Again
             </button>
-            <button onClick={() => navigate(`/products/${productSlug}/modules`)} className="btn btn-primary">
+            <button onClick={() => navigate(`/products/${productSlug}/modules`)} className="roadmap-viz-btn roadmap-viz-btn-primary">
               <span className="material-icons">arrow_back</span>
               Back to Modules
             </button>
@@ -205,7 +205,7 @@ const RoadmapVisualization: React.FC = () => {
 
   return (
     <div className="roadmap-viz-container">
-      <div className="page-header">
+      <div className="roadmap-viz-page-header">
         <div className="header-top-row">
           <div className="header-left">
             <button 
@@ -215,7 +215,7 @@ const RoadmapVisualization: React.FC = () => {
             >
               <span className="material-icons">arrow_back</span>
             </button>
-            <h1 className="page-title">Roadmap Visualization</h1>
+            <h1 className="roadmap-viz-page-title">Roadmap Visualization</h1>
           </div>
           
           <div className="quarter-selectors">
@@ -246,7 +246,10 @@ const RoadmapVisualization: React.FC = () => {
       <div className="roadmap-content">
         <div className="gantt-view">
           <div className="gantt-header">
-            <h3>Q{selectedQuarter} {selectedYear} Roadmap</h3>
+            <div className="gantt-header-title">
+              <div className="gantt-header-bar"></div>
+              <h3>Q{selectedQuarter} {selectedYear} Roadmap</h3>
+            </div>
             <span className="gantt-item-count">{filteredGanttData.length} items</span>
           </div>
           

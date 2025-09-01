@@ -162,7 +162,7 @@
   padding: 0;
 }
 
-.module-description {
+.product-basics-container .module-description {
   color: var(--gray-medium);
   font-size: 1.1rem;
   margin: 0;
@@ -840,7 +840,7 @@
     font-size: 1.125rem;
   }
   
-  .module-description {
+  .product-basics-container .module-description {
     font-size: 1rem;
   }
   

@@ -819,7 +819,7 @@
   color: var(--primary-orange);
 }
 
-.module-description {
+.checkbox-text .module-description {
   font-size: 0.85rem;
   color: var(--gray-medium);
   line-height: 1.4;

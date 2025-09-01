@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useProduct } from '../hooks/useProduct';
@@ -77,27 +77,30 @@ const ProductBacklog: React.FC = () => {
   const [selectedThemeFilter, setSelectedThemeFilter] = useState('');
   const [selectedInitiativeFilter, setSelectedInitiativeFilter] = useState('');
   const [selectedTrackFilter, setSelectedTrackFilter] = useState('');
+  const [deletingEpicId, setDeletingEpicId] = useState<string | null>(null);
 
   // Filtered epics based on search and filters
-  const filteredEpics = epics.filter(epic => {
-    const matchesSearch = searchTerm === '' || 
-      epic.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      epic.description.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesTheme = selectedThemeFilter === '' || epic.themeId === selectedThemeFilter;
-    const matchesInitiative = selectedInitiativeFilter === '' || epic.initiativeId === selectedInitiativeFilter;
-    const matchesTrack = selectedTrackFilter === '' || epic.track === selectedTrackFilter;
-    
-    return matchesSearch && matchesTheme && matchesInitiative && matchesTrack;
-  });
+  const filteredEpics = useMemo(() => {
+    return epics.filter(epic => {
+      const matchesSearch = searchTerm === '' || 
+        epic.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        epic.description.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesTheme = selectedThemeFilter === '' || epic.themeId === selectedThemeFilter;
+      const matchesInitiative = selectedInitiativeFilter === '' || epic.initiativeId === selectedInitiativeFilter;
+      const matchesTrack = selectedTrackFilter === '' || epic.track === selectedTrackFilter;
+      
+      return matchesSearch && matchesTheme && matchesInitiative && matchesTrack;
+    });
+  }, [epics, searchTerm, selectedThemeFilter, selectedInitiativeFilter, selectedTrackFilter]);
 
   // Clear filters function
-  const clearAllFilters = () => {
+  const clearAllFilters = useCallback(() => {
     setSearchTerm('');
     setSelectedThemeFilter('');
     setSelectedInitiativeFilter('');
     setSelectedTrackFilter('');
-  };
+  }, []);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -148,7 +151,6 @@ const ProductBacklog: React.FC = () => {
               setAvailableThemes(parsedThemes);
             }
           } catch (e) {
-            console.log('Failed to parse themes, using empty array');
           }
         }
         
@@ -159,7 +161,6 @@ const ProductBacklog: React.FC = () => {
               setAvailableInitiatives(parsedInitiatives);
             }
           } catch (e) {
-            console.log('Failed to parse initiatives, using empty array');
           }
         }
       }
@@ -175,7 +176,6 @@ const ProductBacklog: React.FC = () => {
               setEpics(parsedEpics);
             }
           } catch (e) {
-            console.log('Failed to parse epics, using empty array');
           }
         }
       }
@@ -189,7 +189,7 @@ const ProductBacklog: React.FC = () => {
 
   const loadProductBacklogData = async (productId: number): Promise<ProductBacklogData | null> => {
     try {
-      const response = await fetch(`http://localhost:8080/api/products/${productId}/backlog`, {
+      const response = await fetch(`http://localhost:8080/api/v3/products/${productId}/backlog`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -203,7 +203,6 @@ const ProductBacklog: React.FC = () => {
         throw new Error('Failed to load product backlog data');
       }
     } catch (error) {
-      console.error('Error loading product backlog data:', error);
       return null;
     }
   };
@@ -222,13 +221,12 @@ const ProductBacklog: React.FC = () => {
         return null;
       }
     } catch (error) {
-      console.error('Error loading product hypothesis data:', error);
       return null;
     }
   };
 
   // Epic management
-  const openAddEpicModal = () => {
+  const openAddEpicModal = useCallback(() => {
     setNewEpic({
       id: Date.now().toString(),
       name: '',
@@ -241,9 +239,9 @@ const ProductBacklog: React.FC = () => {
       track: 'Customer Concerns'
     });
     setShowAddEpicModal(true);
-  };
+  }, []);
 
-  const closeAddEpicModal = () => {
+  const closeAddEpicModal = useCallback(() => {
     setShowAddEpicModal(false);
     setSaving(false); // Reset saving state
     setError(''); // Clear any errors
@@ -265,7 +263,7 @@ const ProductBacklog: React.FC = () => {
     if (editorRef.current) {
       editorRef.current.innerHTML = '';
     }
-  };
+  }, []);
 
   const openViewEpicModal = (epic: Epic) => {
     setViewingEpic(epic);
@@ -359,7 +357,7 @@ const ProductBacklog: React.FC = () => {
       );
 
       // Save to backend
-      const response = await fetch(`http://localhost:8080/api/products/${product?.productId}/backlog`, {
+      const response = await fetch(`http://localhost:8080/api/v3/products/${product?.productId}/backlog`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -383,7 +381,6 @@ const ProductBacklog: React.FC = () => {
         setTimeout(() => setSuccessMessage(''), 5000);
       } else {
         const errorText = await response.text();
-        console.error('Backend error response:', errorText);
         
         if (response.status === 401 || response.status === 403) {
           setError('Authentication expired. Please refresh the page and log in again.');
@@ -394,7 +391,6 @@ const ProductBacklog: React.FC = () => {
         }
       }
     } catch (error: any) {
-      console.error('Network error:', error);
       setError('Failed to update epic. Please try again.');
     } finally {
       setSaving(false);
@@ -421,19 +417,14 @@ const ProductBacklog: React.FC = () => {
         
         const updatedEpics = [...epics, epicToSave];
         
-        console.log('Saving epic:', epicToSave);
-        console.log('All epics:', updatedEpics);
-        
         // Check if token exists
         const token = localStorage.getItem('token');
         if (!token) {
           throw new Error('No authentication token found. Please log in again.');
         }
         
-        console.log('Using token for request:', token ? 'Token exists' : 'No token');
-        
         // Save to backend
-        const response = await fetch(`http://localhost:8080/api/products/${product?.productId}/backlog`, {
+        const response = await fetch(`http://localhost:8080/api/v3/products/${product?.productId}/backlog`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -460,8 +451,6 @@ const ProductBacklog: React.FC = () => {
           // Roll back the optimistic update
           setEpics(epics);
           const errorText = await response.text();
-          console.error('Backend error response:', errorText);
-          console.error('Backend error status:', response.status);
           
           if (response.status === 401 || response.status === 403) {
             setError('Authentication expired. Please refresh the page and log in again.');
@@ -474,7 +463,6 @@ const ProductBacklog: React.FC = () => {
       } catch (error: any) {
         // Roll back the optimistic update
         setEpics(epics);
-        console.error('Network error:', error);
         
         if (error.message?.includes('authentication')) {
           setError(error.message);
@@ -595,13 +583,59 @@ const ProductBacklog: React.FC = () => {
   };
 
 
+  const deleteEpic = async (epicId: string) => {
+    if (!window.confirm('Are you sure you want to delete this epic? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setDeletingEpicId(epicId);
+      setError('');
+
+      // Update local state first (optimistic update)
+      const updatedEpics = epics.filter(epic => epic.id !== epicId);
+      setEpics(updatedEpics);
+
+      // Save to backend with updated epics array
+      const response = await fetch(`http://localhost:8080/api/v3/products/${product?.productId}/backlog`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          epics: JSON.stringify(updatedEpics)
+        })
+      });
+
+      if (response.ok) {
+        const savedData = await response.json();
+        setProductBacklog(savedData);
+        setSuccessMessage('Epic deleted successfully!');
+        
+        // Clear success message after 3 seconds
+        setTimeout(() => setSuccessMessage(''), 3000);
+      } else {
+        // Roll back the optimistic update
+        setEpics(epics);
+        throw new Error('Failed to delete epic');
+      }
+    } catch (error: any) {
+      // Roll back the optimistic update
+      setEpics(epics);
+      setError('Failed to delete epic. Please try again.');
+    } finally {
+      setDeletingEpicId(null);
+    }
+  };
+
   const handleSave = async () => {
     try {
       setSaving(true);
       setError('');
       setSuccessMessage('');
 
-      const response = await fetch(`http://localhost:8080/api/products/${product?.productId}/backlog`, {
+      const response = await fetch(`http://localhost:8080/api/v3/products/${product?.productId}/backlog`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -623,7 +657,6 @@ const ProductBacklog: React.FC = () => {
       }
     } catch (err: any) {
       setError('Failed to save product backlog data. Please try again.');
-      console.error(err);
     } finally {
       setSaving(false);
     }
@@ -657,7 +690,7 @@ const ProductBacklog: React.FC = () => {
   if (availableThemes.length === 0 || availableInitiatives.length === 0) {
     return (
       <div className="product-backlog-container">
-        <div className="page-header">
+        <div className="product-backlog-page-header">
           <div className="header-top-row">
             <div className="header-left">
               <button 
@@ -667,7 +700,7 @@ const ProductBacklog: React.FC = () => {
               >
                 <span className="material-icons">arrow_back</span>
               </button>
-              <h1 className="page-title">Product Backlog</h1>
+              <h1 className="product-backlog-page-title">Product Backlog</h1>
             </div>
           </div>
         </div>
@@ -688,7 +721,7 @@ const ProductBacklog: React.FC = () => {
 
   return (
     <div className="product-backlog-container">
-      <div className="page-header">
+      <div className="product-backlog-page-header">
         <div className="header-top-row">
           <div className="header-left">
             <button 
@@ -698,7 +731,7 @@ const ProductBacklog: React.FC = () => {
             >
               <span className="material-icons">arrow_back</span>
             </button>
-            <h1 className="page-title">Product Backlog</h1>
+            <h1 className="product-backlog-page-title">Product Backlog</h1>
           </div>
           {!loading && (
             <button
@@ -825,6 +858,7 @@ const ProductBacklog: React.FC = () => {
                         <th className="epic-theme-col">Theme</th>
                         <th className="epic-initiative-col">Initiative</th>
                         <th className="epic-track-col">Track</th>
+                        <th className="epic-actions-col">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -847,6 +881,18 @@ const ProductBacklog: React.FC = () => {
                         </td>
                         <td className="epic-track-cell">
                           {epic.track}
+                        </td>
+                        <td className="epic-actions-cell">
+                          <button
+                            onClick={() => deleteEpic(epic.id)}
+                            disabled={deletingEpicId === epic.id}
+                            className="delete-epic-btn"
+                            title="Delete epic"
+                          >
+                            <span className="material-icons">
+                              {deletingEpicId === epic.id ? 'hourglass_empty' : 'delete'}
+                            </span>
+                          </button>
                         </td>
                       </tr>
                       ))}
@@ -886,16 +932,16 @@ const ProductBacklog: React.FC = () => {
 
       {/* Add Epic Modal */}
       {showAddEpicModal && (
-        <div className="modal-overlay" onClick={closeAddEpicModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+        <div className="product-backlog-modal-overlay" onClick={closeAddEpicModal}>
+          <div className="product-backlog-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="product-backlog-modal-header">
               <h2>Add New Epic</h2>
-              <button className="modal-close-btn" onClick={closeAddEpicModal}>
+              <button className="product-backlog-modal-close-btn" onClick={closeAddEpicModal}>
                 <span className="material-icons">close</span>
               </button>
             </div>
             
-            <div className="modal-body">
+            <div className="product-backlog-modal-body">
               <div className="epic-form">
                 <div className="form-row-three">
                   <div className="form-group">
@@ -1034,11 +1080,11 @@ const ProductBacklog: React.FC = () => {
               </div>
             </div>
             
-            <div className="modal-footer">
+            <div className="product-backlog-modal-footer">
               <button 
                 onClick={handleAddEpic}
                 disabled={saving || !newEpic.name.trim() || !newEpic.themeId || !newEpic.initiativeId}
-                className="btn-primary"
+                className="modal-btn-primary"
               >
                 <span className="material-icons">{saving ? 'hourglass_empty' : 'save'}</span>
                 {saving ? 'Saving...' : 'Save Epic'}
@@ -1050,16 +1096,16 @@ const ProductBacklog: React.FC = () => {
 
       {/* View Epic Modal */}
       {showViewEpicModal && viewingEpic && (
-        <div className="modal-overlay" onClick={closeViewEpicModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+        <div className="product-backlog-modal-overlay" onClick={closeViewEpicModal}>
+          <div className="product-backlog-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="product-backlog-modal-header">
               <h2>{isEditingInViewModal ? 'Edit Epic' : 'Epic Details'}</h2>
-              <button className="modal-close-btn" onClick={closeViewEpicModal}>
+              <button className="product-backlog-modal-close-btn" onClick={closeViewEpicModal}>
                 <span className="material-icons">close</span>
               </button>
             </div>
             
-            <div className="modal-body">
+            <div className="product-backlog-modal-body">
               {error && <div className="alert alert-error">{error}</div>}
               
               <div className="epic-form">
@@ -1236,7 +1282,7 @@ const ProductBacklog: React.FC = () => {
               </div>
             </div>
             
-            <div className="modal-footer">
+            <div className="product-backlog-modal-footer">
               {isEditingInViewModal ? (
                 <div style={{ display: 'flex', gap: '12px' }}>
                   <button 
@@ -1250,7 +1296,7 @@ const ProductBacklog: React.FC = () => {
                   <button 
                     onClick={saveEditedViewEpic}
                     disabled={saving || !editingViewEpic?.name.trim() || !editingViewEpic?.themeId || !editingViewEpic?.initiativeId}
-                    className="btn-primary"
+                    className="modal-btn-primary"
                   >
                     <span className="material-icons">{saving ? 'hourglass_empty' : 'save'}</span>
                     {saving ? 'Saving...' : 'Save Changes'}
@@ -1258,6 +1304,21 @@ const ProductBacklog: React.FC = () => {
                 </div>
               ) : (
                 <div style={{ display: 'flex', gap: '12px' }}>
+                  <button 
+                    onClick={() => {
+                      if (viewingEpic) {
+                        deleteEpic(viewingEpic.id);
+                        closeViewEpicModal();
+                      }
+                    }}
+                    className="btn-delete"
+                    disabled={deletingEpicId === viewingEpic?.id}
+                  >
+                    <span className="material-icons">
+                      {deletingEpicId === viewingEpic?.id ? 'hourglass_empty' : 'delete'}
+                    </span>
+                    Delete
+                  </button>
                   <button 
                     onClick={startEditingInViewModal}
                     className="btn-edit"
@@ -1282,4 +1343,4 @@ const ProductBacklog: React.FC = () => {
   );
 };
 
-export default ProductBacklog;
+export default React.memo(ProductBacklog);

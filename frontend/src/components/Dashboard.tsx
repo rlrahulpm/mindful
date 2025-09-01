@@ -45,7 +45,6 @@ const Dashboard: React.FC = () => {
       setProducts(productsData);
     } catch (err: any) {
       setError('Failed to load products');
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -63,7 +62,6 @@ const Dashboard: React.FC = () => {
       setShowAddForm(false); // Hide form after successful addition
     } catch (err: any) {
       setError('Failed to add product');
-      console.error(err);
     } finally {
       setIsAddingProduct(false);
     }

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
@@ -6,15 +6,18 @@ import SuperadminRoute from './components/SuperadminRoute';
 import Navbar from './components/Navbar';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
-import ProductModules from './components/ProductModules';
-import ProductBasics from './components/ProductBasics';
-import MarketCompetition from './components/MarketCompetition';
-import ProductHypothesis from './components/ProductHypothesis';
-import ProductBacklog from './components/ProductBacklog';
-import QuarterlyRoadmap from './components/QuarterlyRoadmap';
-import CapacityPlanning from './components/CapacityPlanning';
-import AdminDashboard from './components/AdminDashboard';
 import './App.css';
+
+// Lazy load the heavy components for better performance
+const ProductModules = React.lazy(() => import('./components/ProductModules'));
+const ProductBasics = React.lazy(() => import('./components/ProductBasics'));
+const MarketCompetition = React.lazy(() => import('./components/MarketCompetition'));
+const ProductHypothesis = React.lazy(() => import('./components/ProductHypothesis'));
+const ProductBacklog = React.lazy(() => import('./components/ProductBacklog'));
+const QuarterlyRoadmap = React.lazy(() => import('./components/QuarterlyRoadmap'));
+const RoadmapVisualization = React.lazy(() => import('./components/RoadmapVisualization'));
+const CapacityPlanning = React.lazy(() => import('./components/CapacityPlanning'));
+const AdminDashboard = React.lazy(() => import('./components/AdminDashboard'));
 
 function App() {
   return (
@@ -22,7 +25,26 @@ function App() {
       <Router>
         <div className="App">
           <Navbar />
-          <Routes>
+          <Suspense fallback={
+            <div className="loading-container" style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              height: '50vh',
+              flexDirection: 'column'
+            }}>
+              <div className="spinner" style={{
+                width: '40px',
+                height: '40px',
+                border: '3px solid #f3f3f3',
+                borderTop: '3px solid #0066cc',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite'
+              }}></div>
+              <p style={{ marginTop: '20px' }}>Loading...</p>
+            </div>
+          }>
+            <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/login" element={<Login />} />
             <Route 
@@ -82,6 +104,14 @@ function App() {
               } 
             />
             <Route 
+              path="/products/:productSlug/modules/roadmap-visualization" 
+              element={
+                <PrivateRoute>
+                  <RoadmapVisualization />
+                </PrivateRoute>
+              } 
+            />
+            <Route 
               path="/products/:productSlug/modules/capacity-planning" 
               element={
                 <PrivateRoute>
@@ -98,6 +128,7 @@ function App() {
               } 
             />
           </Routes>
+          </Suspense>
         </div>
       </Router>
     </AuthProvider>

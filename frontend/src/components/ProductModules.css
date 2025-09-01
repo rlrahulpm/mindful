@@ -5,7 +5,7 @@
   min-height: 100vh;
 }
 
-.page-header {
+.product-modules-page-header {
   display: flex;
   flex-direction: column;
   gap: 32px;
@@ -81,7 +81,7 @@
   box-shadow: 0 4px 12px rgba(217, 127, 90, 0.2);
 }
 
-.page-title {
+.product-modules-page-title {
   font-size: 1.8rem;
   font-weight: 700;
   color: var(--black);

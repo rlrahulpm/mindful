@@ -51,11 +51,6 @@ const AdminDashboard: React.FC = () => {
 
   const getModulesForProduct = useCallback((productId: number) => {
     const filteredModules = modules.filter(module => module.product?.productId === productId);
-    console.log(`getModulesForProduct(${productId}): Found ${filteredModules.length} modules`);
-    console.log('All modules available:', modules.length);
-    if (modules.length > 0) {
-      console.log('Sample module:', modules[0]);
-    }
     return filteredModules;
   }, [modules]);
 
@@ -84,7 +79,6 @@ const AdminDashboard: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    console.log('AdminDashboard component mounted');
     loadData();
   }, []);
 
@@ -100,17 +94,12 @@ const AdminDashboard: React.FC = () => {
 
   const loadData = async () => {
     try {
-      console.log('AdminDashboard: Starting to load data...');
       setLoading(true);
       const [rolesData, usersData, modulesData] = await Promise.all([
         adminService.getRoles(),
         adminService.getUsers(),
         adminService.getProductModules()
       ]);
-      console.log('AdminDashboard: Data loaded successfully');
-      console.log('Roles:', rolesData);
-      console.log('Users:', usersData);
-      console.log('Product-Modules:', modulesData);
       
       setRoles(rolesData);
       setUsers(usersData);
@@ -118,7 +107,6 @@ const AdminDashboard: React.FC = () => {
       
     } catch (err: any) {
       setError('Failed to load data');
-      console.error('Admin data loading error:', err);
     } finally {
       setLoading(false);
     }
@@ -144,7 +132,6 @@ const AdminDashboard: React.FC = () => {
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err: any) {
       setError('Failed to save role');
-      console.error(err);
     }
   };
 
@@ -161,7 +148,6 @@ const AdminDashboard: React.FC = () => {
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err: any) {
       setError('Failed to create user');
-      console.error(err);
     }
   };
 
@@ -174,7 +160,6 @@ const AdminDashboard: React.FC = () => {
         setTimeout(() => setSuccessMessage(''), 3000);
       } catch (err: any) {
         setError('Failed to delete role');
-        console.error(err);
       }
     }
   };

@@ -100,7 +100,6 @@ const ProductBasics: React.FC = () => {
       }
     } catch (err: any) {
       setError('Failed to load product basics');
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -123,7 +122,6 @@ const ProductBasics: React.FC = () => {
         throw new Error('Failed to load product basics');
       }
     } catch (error) {
-      console.error('Error loading product basics:', error);
       return null;
     }
   };
@@ -213,7 +211,6 @@ const ProductBasics: React.FC = () => {
       }
     } catch (err: any) {
       setError('Failed to save product basics. Please try again.');
-      console.error(err);
     } finally {
       setSaving(false);
     }

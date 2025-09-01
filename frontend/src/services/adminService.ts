@@ -46,9 +46,7 @@ export const adminService = {
 
   // Product Module management
   getProductModules: async (): Promise<ProductModuleResponse[]> => {
-    console.log('adminService: Calling /admin/product-modules...');
     const response = await api.get('/admin/product-modules');
-    console.log('adminService: product-modules response:', response.data);
     return response.data;
   },
 

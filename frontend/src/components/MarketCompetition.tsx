@@ -108,7 +108,6 @@ const MarketCompetition: React.FC = () => {
       }
     } catch (err: any) {
       setError('Failed to load market competition data');
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -131,7 +130,6 @@ const MarketCompetition: React.FC = () => {
         throw new Error('Failed to load market competition data');
       }
     } catch (error) {
-      console.error('Error loading market competition data:', error);
       return null;
     }
   };
@@ -227,7 +225,6 @@ const MarketCompetition: React.FC = () => {
       }
     } catch (err: any) {
       setError('Failed to save market competition data. Please try again.');
-      console.error(err);
     } finally {
       setSaving(false);
     }

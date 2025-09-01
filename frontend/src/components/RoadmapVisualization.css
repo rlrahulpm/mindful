@@ -5,7 +5,7 @@
   min-height: 100vh;
 }
 
-.page-header {
+.roadmap-viz-page-header {
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -82,7 +82,7 @@
   box-shadow: 0 4px 12px rgba(217, 127, 90, 0.2);
 }
 
-.page-title {
+.roadmap-viz-page-title {
   font-size: 1.8rem;
   font-weight: 700;
   color: var(--black);
@@ -105,7 +105,7 @@
   padding: 4px;
 }
 
-.mode-btn {
+.roadmap-viz-container .mode-btn {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -120,11 +120,11 @@
   color: var(--gray-medium);
 }
 
-.mode-btn:hover {
+.roadmap-viz-container .mode-btn:hover {
   background: rgba(0, 0, 0, 0.1);
 }
 
-.mode-btn.active {
+.roadmap-viz-container .mode-btn.active {
   background: var(--primary-orange);
   color: var(--white);
   box-shadow: 0 2px 8px rgba(217, 127, 90, 0.3);
@@ -202,7 +202,7 @@
   transform: translateY(-2px);
 }
 
-.quarter-header {
+.roadmap-viz-container .quarter-header {
   background: linear-gradient(135deg, var(--primary-orange) 0%, #c96a4a 100%);
   color: var(--white);
   padding: 16px 20px;
@@ -214,13 +214,13 @@
   gap: 8px;
 }
 
-.quarter-label h3 {
+.roadmap-viz-container .quarter-label h3 {
   margin: 0;
   font-size: 1.1rem;
   font-weight: 600;
 }
 
-.quarter-label .material-icons {
+.roadmap-viz-container .quarter-label .material-icons {
   font-size: 20px;
 }
 
@@ -406,7 +406,7 @@
   backdrop-filter: blur(10px);
 }
 
-.gantt-header h3 {
+.roadmap-viz-container .gantt-header h3 {
   margin: 0;
   font-size: 1.5rem;
   font-weight: 700;
@@ -417,12 +417,18 @@
   gap: 12px;
 }
 
-.gantt-header h3::before {
-  content: '';
+.gantt-header-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.gantt-header-bar {
   width: 4px;
   height: 24px;
   background: linear-gradient(180deg, var(--primary-orange) 0%, #c96a4a 100%);
   border-radius: 2px;
+  flex-shrink: 0;
 }
 
 .gantt-item-count {
@@ -593,7 +599,7 @@
   border-bottom: none;
 }
 
-.gantt-item-row::before {
+.roadmap-viz-container .gantt-item-row::before {
   content: '';
   position: absolute;
   left: 0;
@@ -604,7 +610,7 @@
   transition: all 0.3s ease;
 }
 
-.gantt-item-row:hover::before {
+.roadmap-viz-container .gantt-item-row:hover::before {
   background: linear-gradient(180deg, var(--primary-orange) 0%, #c96a4a 100%);
 }
 
@@ -714,7 +720,7 @@
   border: none;
 }
 
-.gantt-bar::before {
+.roadmap-viz-container .gantt-bar::before {
   content: '';
   position: absolute;
   top: 0;
@@ -725,13 +731,13 @@
   transition: left 0.6s ease;
 }
 
-.gantt-bar:hover {
+.roadmap-viz-container .gantt-bar:hover {
   transform: translateY(-3px) scale(1.02);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
   z-index: 5;
 }
 
-.gantt-bar:hover::before {
+.roadmap-viz-container .gantt-bar:hover::before {
   left: 100%;
 }
 
@@ -802,7 +808,7 @@
   margin-top: 16px;
 }
 
-.btn {
+.roadmap-viz-btn {
   padding: 10px 20px;
   border: none;
   border-radius: 8px;
@@ -815,22 +821,22 @@
   gap: 8px;
 }
 
-.btn-primary {
+.roadmap-viz-btn-primary {
   background: var(--primary-orange);
   color: var(--white);
 }
 
-.btn-primary:hover {
+.roadmap-viz-btn-primary:hover {
   background: #c96a4a;
   transform: translateY(-1px);
 }
 
-.btn-secondary {
+.roadmap-viz-btn-secondary {
   background: rgba(0, 0, 0, 0.05);
   color: var(--gray-dark);
 }
 
-.btn-secondary:hover {
+.roadmap-viz-btn-secondary:hover {
   background: rgba(0, 0, 0, 0.1);
 }
 
@@ -840,134 +846,134 @@
     padding: 16px 12px;
   }
   
-  .page-header {
+  .roadmap-viz-container .page-header {
     gap: 16px;
     margin-bottom: 24px;
   }
   
-  .header-top-row {
+  .roadmap-viz-container .header-top-row {
     flex-direction: column;
     align-items: flex-start;
     gap: 16px;
   }
   
-  .filters-row {
+  .roadmap-viz-container .filters-row {
     flex-direction: column;
     align-items: flex-start;
   }
   
-  .timeline-container {
+  .roadmap-viz-container .timeline-container {
     grid-template-columns: 1fr;
     gap: 16px;
   }
   
-  .roadmap-content {
+  .roadmap-viz-container .roadmap-content {
     padding: 20px 16px;
   }
   
-  .item-title-row {
+  .roadmap-viz-container .item-title-row {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
   }
   
-  .item-badges {
+  .roadmap-viz-container .item-badges {
     align-self: stretch;
     justify-content: flex-start;
   }
   
-  .item-metrics {
+  .roadmap-viz-container .item-metrics {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
   }
   
-  .filters-row {
+  .roadmap-viz-container .filters-row {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
   }
   
-  .quarter-selectors {
+  .roadmap-viz-container .quarter-selectors {
     width: 100%;
     justify-content: flex-start;
   }
   
-  .gantt-item-label {
+  .roadmap-viz-container .gantt-item-label {
     flex: 0 0 250px;
     padding: 12px;
   }
   
-  .gantt-item-name {
+  .roadmap-viz-container .gantt-item-name {
     font-size: 13px;
   }
   
-  .gantt-timeline-header {
+  .roadmap-viz-container .gantt-timeline-header {
     font-size: 12px;
   }
   
-  .gantt-month-header {
+  .roadmap-viz-container .gantt-month-header {
     padding: 12px 6px;
   }
 }
 
 @media (max-width: 480px) {
-  .page-title {
+  .roadmap-viz-container .page-title {
     font-size: 1.4rem;
   }
   
-  .view-mode-toggle {
+  .roadmap-viz-container .view-mode-toggle {
     width: 100%;
   }
   
-  .mode-btn {
+  .roadmap-viz-container .mode-btn {
     flex: 1;
     justify-content: center;
   }
   
-  .filters {
+  .roadmap-viz-container .filters {
     width: 100%;
     flex-direction: column;
   }
   
-  .filter-select {
+  .roadmap-viz-container .filter-select {
     width: 100%;
   }
   
-  .quarter-select {
+  .roadmap-viz-container .quarter-select {
     flex: 1;
     min-width: 0;
   }
   
-  .gantt-item {
+  .roadmap-viz-container .gantt-item {
     flex-direction: column;
     min-height: auto;
   }
   
-  .gantt-item-label {
+  .roadmap-viz-container .gantt-item-label {
     flex: none;
     border-right: none;
     border-bottom: 1px solid var(--gray-lighter);
   }
   
-  .gantt-item-timeline {
+  .roadmap-viz-container .gantt-item-timeline {
     padding: 12px;
     min-height: 40px;
   }
   
-  .gantt-timeline-header {
+  .roadmap-viz-container .gantt-timeline-header {
     font-size: 11px;
   }
   
-  .gantt-month-header {
+  .roadmap-viz-container .gantt-month-header {
     padding: 8px 4px;
   }
   
-  .gantt-bar {
+  .roadmap-viz-container .gantt-bar {
     height: 20px;
   }
   
-  .gantt-bar-content {
+  .roadmap-viz-container .gantt-bar-content {
     font-size: 10px;
     padding: 0 4px;
   }

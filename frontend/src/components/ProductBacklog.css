@@ -5,7 +5,7 @@
   min-height: 100vh;
 }
 
-.page-header {
+.product-backlog-page-header {
   margin-bottom: 48px;
 }
 
@@ -22,7 +22,7 @@
   gap: 16px;
 }
 
-.page-title {
+.product-backlog-page-title {
   font-size: 1.8rem;
   font-weight: 700;
   color: var(--black);
@@ -152,7 +152,7 @@
   font-weight: 600;
 }
 
-.module-description {
+.product-backlog-container .module-description {
   font-size: 1.1rem;
   color: var(--gray-dark);
   line-height: 1.6;
@@ -982,7 +982,7 @@
 }
 
 /* Modal Styles */
-.modal-overlay {
+.product-backlog-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -996,7 +996,7 @@
   padding: 20px;
 }
 
-.modal-content {
+.product-backlog-modal-content {
   background: var(--white);
   border-radius: 20px;
   width: 100%;
@@ -1019,7 +1019,7 @@
   }
 }
 
-.modal-header {
+.product-backlog-modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1027,14 +1027,14 @@
   border-bottom: none;
 }
 
-.modal-header h2 {
+.product-backlog-modal-header h2 {
   font-size: 1.4rem;
   font-weight: 600;
   color: var(--black);
   margin: 0;
 }
 
-.modal-close-btn {
+.product-backlog-modal-close-btn {
   background: rgba(217, 127, 90, 0.1);
   border: 2px solid var(--primary-orange);
   color: var(--primary-orange);
@@ -1049,14 +1049,14 @@
   height: 32px;
 }
 
-.modal-close-btn:hover {
+.product-backlog-modal-close-btn:hover {
   background: var(--primary-orange);
   color: var(--white);
   transform: translateY(-1px);
   box-shadow: 0 6px 24px rgba(217, 127, 90, 0.3);
 }
 
-.modal-body {
+.product-backlog-modal-body {
   padding: 20px 40px;
   flex: 1;
   overflow-y: auto;
@@ -1093,7 +1093,7 @@
   margin-bottom: 8px;
 }
 
-.modal-footer {
+.product-backlog-modal-footer {
   display: flex;
   justify-content: center;
   padding: 20px 40px 24px;
@@ -1120,7 +1120,8 @@
   color: var(--white);
 }
 
-.btn-primary {
+/* Using specific button styles for ProductBacklog modals */
+.modal-btn-primary {
   padding: 6px 20px;
   background: rgba(217, 127, 90, 0.1);
   color: var(--primary-orange);
@@ -1135,14 +1136,14 @@
   gap: 5px;
 }
 
-.btn-primary:hover:not(:disabled) {
+.modal-btn-primary:hover:not(:disabled) {
   background: var(--primary-orange);
   color: var(--white);
   transform: translateY(-1px);
   box-shadow: 0 6px 24px rgba(217, 127, 90, 0.3);
 }
 
-.btn-primary:disabled {
+.modal-btn-primary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
@@ -1356,13 +1357,13 @@
   }
 
 
-  .modal-overlay {
+  .product-backlog-modal-overlay {
     padding: 10px;
   }
 
   .modal-header,
   .modal-body,
-  .modal-footer {
+  .product-backlog-modal-footer {
     padding-left: 24px;
     padding-right: 24px;
   }
@@ -1377,7 +1378,7 @@
     gap: 16px;
   }
 
-  .modal-footer {
+  .product-backlog-modal-footer {
     flex-direction: column;
     gap: 12px;
   }

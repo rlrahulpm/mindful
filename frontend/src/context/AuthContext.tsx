@@ -43,9 +43,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setToken(response.token);
         setUser(userData);
         
-        console.log('Token refreshed successfully');
       } catch (error) {
-        console.error('Failed to refresh token:', error);
         logout();
       }
     }
@@ -115,7 +113,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     authService.removeAuthToken();
     setToken(null);
     setUser(null);
-    authService.logout().catch(console.error);
+    authService.logout().catch(() => {});
   };
 
   const value: AuthContextType = {

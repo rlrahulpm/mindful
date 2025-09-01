@@ -89,7 +89,6 @@ const ProductHypothesis: React.FC = () => {
               setInitiatives(parsedInitiatives);
             }
           } catch (e) {
-            console.log('Failed to parse initiatives, using empty array');
           }
         }
         
@@ -101,7 +100,6 @@ const ProductHypothesis: React.FC = () => {
               setThemes(parsedThemes);
             }
           } catch (e) {
-            console.log('Failed to parse themes, using empty array');
           }
         }
         
@@ -113,14 +111,12 @@ const ProductHypothesis: React.FC = () => {
               setAssumptions(parsedAssumptions);
             }
           } catch (e) {
-            console.log('Failed to parse assumptions, using empty array');
           }
         }
         
       }
     } catch (err: any) {
       setError('Failed to load product hypothesis data');
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -142,7 +138,6 @@ const ProductHypothesis: React.FC = () => {
         throw new Error('Failed to load product hypothesis data');
       }
     } catch (error) {
-      console.error('Error loading product hypothesis data:', error);
       return null;
     }
   };

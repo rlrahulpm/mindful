@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ProductModule } from '../types/module';
 import { moduleService } from '../services/moduleService';
@@ -16,34 +16,27 @@ const ProductModules: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    if (product) {
-      loadModules();
-    }
-  }, [product]);
-
-  useEffect(() => {
-    if (user && modules.length > 0) {
-      filterModulesByUserRole();
-    }
-  }, [user, modules]);
-
-  const loadModules = async () => {
+  const loadModules = useCallback(async (signal?: AbortSignal) => {
     if (!product) return;
     
     try {
       setLoading(true);
-      const modulesData = await moduleService.getProductModules(product.productId);
-      setModules(modulesData);
+      const modulesData = await moduleService.getProductModules(product.productId, signal);
+      if (!signal?.aborted) {
+        setModules(modulesData);
+      }
     } catch (err: any) {
-      setError('Failed to load product modules');
-      console.error(err);
+      if (err.name !== 'AbortError' && !signal?.aborted) {
+        setError('Failed to load product modules');
+      }
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) {
+        setLoading(false);
+      }
     }
-  };
+  }, [product]);
 
-  const filterModulesByUserRole = async () => {
+  const filterModulesByUserRole = useCallback(async (signal?: AbortSignal) => {
     try {
       if (!user) {
         setFilteredModules([]);
@@ -60,10 +53,11 @@ const ProductModules: React.FC = () => {
       const response = await fetch(`http://localhost:8080/api/admin/users/${user.id}/role-modules`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+        },
+        signal
       });
 
-      if (response.ok) {
+      if (response.ok && !signal?.aborted) {
         const userRoleModules = await response.json();
         const allowedProductModuleIds = userRoleModules.map((pm: any) => pm.id);
         
@@ -72,16 +66,32 @@ const ProductModules: React.FC = () => {
           allowedProductModuleIds.includes(productModule.id)
         );
         setFilteredModules(accessible);
-      } else {
+      } else if (!signal?.aborted) {
         // If no role or API error, show no modules
         setFilteredModules([]);
       }
-    } catch (err) {
-      console.error('Error filtering modules by role:', err);
-      setFilteredModules([]);
+    } catch (err: any) {
+      if (err.name !== 'AbortError' && !signal?.aborted) {
+        setFilteredModules([]);
+      }
     }
-  };
+  }, [user, modules]);
 
+  useEffect(() => {
+    if (product) {
+      const controller = new AbortController();
+      loadModules(controller.signal);
+      return () => controller.abort();
+    }
+  }, [product, loadModules]);
+
+  useEffect(() => {
+    if (user && modules.length > 0) {
+      const controller = new AbortController();
+      filterModulesByUserRole(controller.signal);
+      return () => controller.abort();
+    }
+  }, [user, modules, filterModulesByUserRole]);
 
   if (loading || productLoading) {
     return (
@@ -110,7 +120,7 @@ const ProductModules: React.FC = () => {
 
   return (
     <div className="modules-container">
-      <div className="page-header">
+      <div className="product-modules-page-header">
         <div className="header-top-row">
           <div className="header-left">
             <button 
@@ -120,7 +130,7 @@ const ProductModules: React.FC = () => {
             >
               <span className="material-icons">arrow_back</span>
             </button>
-            <h1 className="page-title">Product Modules</h1>
+            <h1 className="product-modules-page-title">Product Modules</h1>
           </div>
         </div>
       </div>
@@ -138,6 +148,7 @@ const ProductModules: React.FC = () => {
                  productModule.module.name === 'Product Hypothesis' ? 'lightbulb' :
                  productModule.module.name === 'Product Backlog' ? 'list_alt' :
                  productModule.module.name === 'Roadmap Planner' ? 'timeline' :
+                 productModule.module.name === 'Roadmap' ? 'view_timeline' :
                  productModule.module.name === 'Capacity Planning' ? 'groups' : 'extension'}
               </span>
             </div>
@@ -161,10 +172,11 @@ const ProductModules: React.FC = () => {
                     navigate(`/products/${productSlug}/modules/backlog`);
                   } else if (productModule.module.name === 'Roadmap Planner') {
                     navigate(`/products/${productSlug}/modules/roadmap`);
+                  } else if (productModule.module.name === 'Roadmap') {
+                    navigate(`/products/${productSlug}/modules/roadmap-visualization`);
                   } else if (productModule.module.name === 'Capacity Planning') {
                     navigate(`/products/${productSlug}/modules/capacity-planning`);
                   } else {
-                    console.log('Viewing module:', productModule.module.name);
                   }
                 }}
               >
@@ -188,4 +200,4 @@ const ProductModules: React.FC = () => {
   );
 };
 
-export default ProductModules;
+export default React.memo(ProductModules);

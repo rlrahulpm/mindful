@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-// import { useAuth } from '../context/AuthContext';
 import { useProduct } from '../hooks/useProduct';
 import './QuarterlyRoadmap.css';
 
@@ -61,7 +60,6 @@ const getQuarterEndDate = (year: number, quarter: number): string => {
 const QuarterlyRoadmap: React.FC = () => {
   const { productSlug } = useParams<{ productSlug: string }>();
   const navigate = useNavigate();
-  // const { user } = useAuth();
   const { product, loading: productLoading, error: productError } = useProduct(productSlug);
   
   const [roadmapData, setRoadmapData] = useState<QuarterlyRoadmapData | null>(null);
@@ -81,30 +79,36 @@ const QuarterlyRoadmap: React.FC = () => {
   const [assignedEpicIds, setAssignedEpicIds] = useState<Set<string>>(new Set());
 
   const loadRoadmapData = async () => {
-    if (!product) return;
+    
+    if (!product) {
+      return;
+    }
     
     try {
-      console.log('Loading roadmap data for:', { productId: product.productId, selectedYear, selectedQuarter });
       setLoading(true);
-      const response = await fetch(
-        `http://localhost:8080/api/products/${product.productId}/roadmap/${selectedYear}/${selectedQuarter}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
+      
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const url = `http://localhost:8080/api/v2/products/${product.productId}/roadmap/${selectedYear}/${selectedQuarter}`;
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         }
-      );
+      });
 
-      console.log('Roadmap response status:', response.status);
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Roadmap data received:', data);
         setRoadmapData(data);
         const epicIds = data.roadmapItems?.map((item: RoadmapItem) => item.epicId) || [];
         setSelectedEpics(new Set(epicIds));
       } else if (response.status === 404) {
-        console.log('No roadmap exists for this quarter, creating empty one');
         // No roadmap exists for this quarter yet
         setRoadmapData({
           productId: product.productId,
@@ -117,18 +121,19 @@ const QuarterlyRoadmap: React.FC = () => {
         throw new Error('Failed to load roadmap data');
       }
     } catch (err: any) {
-      console.error('Error loading roadmap:', err);
-      setError('Failed to load roadmap data');
+      setError('Failed to load roadmap data: ' + (err.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }
   };
 
   const loadAvailableEpics = async () => {
-    if (!product) return;
+    if (!product) {
+      return;
+    }
     
     try {
-      const response = await fetch(`http://localhost:8080/api/products/${product.productId}/backlog`, {
+      const response = await fetch(`http://localhost:8080/api/v3/products/${product.productId}/backlog`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -136,13 +141,16 @@ const QuarterlyRoadmap: React.FC = () => {
 
       if (response.ok) {
         const backlogData = await response.json();
+        
         if (backlogData && backlogData.epics) {
           const epicsArray = JSON.parse(backlogData.epics);
           setAvailableEpics(epicsArray);
+        } else {
+          setAvailableEpics([]);
         }
+      } else {
       }
     } catch (err) {
-      console.error('Error loading available epics:', err);
     }
   };
 
@@ -163,10 +171,8 @@ const QuarterlyRoadmap: React.FC = () => {
       if (response.ok) {
         const epicIds = await response.json();
         setAssignedEpicIds(new Set(epicIds));
-        console.log('Assigned epic IDs from other quarters:', epicIds);
       }
     } catch (err) {
-      console.error('Error loading assigned epic IDs:', err);
     }
   };
   
@@ -177,59 +183,89 @@ const QuarterlyRoadmap: React.FC = () => {
   useEffect(() => {
     if (product) {
       setInlineError(''); // Clear any previous error messages
-      loadRoadmapData();
+      
+      // Force call loadRoadmapData even if there are issues
+      loadRoadmapData().catch(err => {
+      });
+      
       loadAvailableEpics();
       loadAssignedEpicIds();
+    } else {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product, selectedYear, selectedQuarter]);
 
   const saveRoadmap = async () => {
     try {
+      
       setLoading(true);
       
-      let roadmapItems: RoadmapItem[];
+      let roadmapItems: RoadmapItem[] = [];
       
       if (isEditMode) {
         // In edit mode, save the current roadmapData items
         roadmapItems = roadmapData?.roadmapItems || [];
       } else {
         // When adding/removing epics from the modal
+        // Only keep epics that are selected in the modal
+        const existingItems = roadmapData?.roadmapItems || [];
+        
+        
+        // Build roadmapItems based on selectedEpics (this handles both adding and removing)
         roadmapItems = Array.from(selectedEpics).map(epicId => {
           const epic = availableEpics.find(e => e.id === epicId);
-          const existingItem = roadmapData?.roadmapItems.find(item => item.epicId === epicId);
+          const existingItem = existingItems.find(item => item.epicId === epicId);
           
-          const reach = existingItem?.reach || 0;
-          const impact = existingItem?.impact || 0;
-          const confidence = existingItem?.confidence || 0;
-          const riceScore = reach * impact * confidence;
-          
-          return {
-            epicId,
-            epicName: epic?.name || '',
-            epicDescription: epic?.description || '',
-            priority: existingItem?.priority || 'Medium',
-            status: existingItem?.status || 'Proposed',
-            estimatedEffort: existingItem?.estimatedEffort || '',
-            assignedTeam: existingItem?.assignedTeam || '',
-            reach,
-            impact,
-            confidence,
-            riceScore,
-            effortRating: existingItem?.effortRating || 0,
-            startDate: existingItem?.startDate || getQuarterStartDate(selectedYear, selectedQuarter),
-            endDate: existingItem?.endDate || getQuarterEndDate(selectedYear, selectedQuarter)
-          };
+          if (existingItem) {
+            // Keep existing item data if epic was already in roadmap
+            return existingItem;
+          } else {
+            // Create new item for newly added epic
+            const reach = 0;
+            const impact = 0;
+            const confidence = 0;
+            const riceScore = reach * impact * confidence;
+            
+            return {
+              epicId,
+              epicName: epic?.name || '',
+              epicDescription: epic?.description || '',
+              priority: 'Medium',
+              status: 'Proposed',
+              estimatedEffort: '',
+              assignedTeam: '',
+              reach,
+              impact,
+              confidence,
+              riceScore,
+              effortRating: 0,
+              startDate: getQuarterStartDate(selectedYear, selectedQuarter),
+              endDate: getQuarterEndDate(selectedYear, selectedQuarter)
+            };
+          }
         });
+        
+        
+        // Log which epics were removed
+        const removedEpics = existingItems.filter(item => !selectedEpics.has(item.epicId));
       }
 
       const requestData = {
         year: selectedYear,
         quarter: selectedQuarter,
-        roadmapItems
+        roadmapItems,
+        // DEBUG INFO - remove after fixing
+        debug: {
+          selectedEpicsCount: selectedEpics.size,
+          selectedEpicsArray: Array.from(selectedEpics),
+          availableEpicsCount: availableEpics.length,
+          isEditMode: isEditMode,
+          existingItemsCount: roadmapData?.roadmapItems?.length || 0
+        }
       };
 
-      const response = await fetch(`http://localhost:8080/api/products/${product?.productId}/roadmap`, {
+
+      const response = await fetch(`http://localhost:8080/api/v2/products/${product?.productId}/roadmap`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -254,7 +290,6 @@ const QuarterlyRoadmap: React.FC = () => {
       }
     } catch (err) {
       setError('Failed to save roadmap');
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -263,14 +298,12 @@ const QuarterlyRoadmap: React.FC = () => {
   const updateRoadmapItem = async (epicId: string, field: keyof RoadmapItem, value: string | number) => {
     if (!roadmapData) return;
     
-    console.log('updateRoadmapItem called:', { epicId, field, value, isEditMode });
     
     // For effortRating, use the specific endpoint (only in view mode since it's auto-filled)
     if (field === 'effortRating' && !isEditMode) {
       try {
-        console.log('Updating effort rating via specific endpoint:', { epicId, value });
         const response = await fetch(
-          `http://localhost:8080/api/products/${product?.productId}/roadmap/${selectedYear}/${selectedQuarter}/epics/${epicId}/effort-rating`, 
+          `http://localhost:8080/api/v2/products/${product?.productId}/roadmap/${selectedYear}/${selectedQuarter}/epics/${epicId}/effort-rating`, 
           {
             method: 'PUT',
             headers: {
@@ -297,12 +330,10 @@ const QuarterlyRoadmap: React.FC = () => {
             roadmapItems: updatedItems
           });
           
-          console.log('Effort rating updated successfully');
         } else {
           throw new Error('Failed to update effort rating');
         }
       } catch (err) {
-        console.error('Error updating effort rating:', err);
       }
       return;
     }
@@ -317,7 +348,6 @@ const QuarterlyRoadmap: React.FC = () => {
           const impact = field === 'impact' ? value as number : updatedItem.impact || 0;
           const confidence = field === 'confidence' ? value as number : updatedItem.confidence || 0;
           updatedItem.riceScore = reach * impact * confidence;
-          console.log('RICE recalculated:', { reach, impact, confidence, riceScore: updatedItem.riceScore });
         }
         
         return updatedItem;
@@ -332,12 +362,13 @@ const QuarterlyRoadmap: React.FC = () => {
     
     setRoadmapData(updatedRoadmapData);
     
-    // Only auto-save if NOT in edit mode
-    if (!isEditMode) {
-      console.log('Auto-saving to database (not in edit mode):', { year: selectedYear, quarter: selectedQuarter, roadmapItems: updatedItems });
+    // Auto-save if NOT in edit mode, OR if updating dates/status/priority (which should always be saved immediately)
+    const shouldAutoSave = !isEditMode || ['startDate', 'endDate', 'status', 'priority'].includes(field);
+    
+    if (shouldAutoSave) {
       
       try {
-        const response = await fetch(`http://localhost:8080/api/products/${product?.productId}/roadmap`, {
+        const response = await fetch(`http://localhost:8080/api/v2/products/${product?.productId}/roadmap`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -362,18 +393,15 @@ const QuarterlyRoadmap: React.FC = () => {
           }
         } else {
           setInlineError(''); // Clear any error messages on successful auto-save
-          console.log('Roadmap saved successfully');
         }
       } catch (err) {
-        console.error('Error saving roadmap item:', err);
         // Optionally show a toast notification or error message
       }
     } else {
-      console.log('In edit mode - changes stored locally, not saved to database yet');
     }
   };
 
-  const toggleEpicSelection = (epicId: string) => {
+  const toggleEpicSelection = useCallback((epicId: string) => {
     const newSelection = new Set(selectedEpics);
     if (newSelection.has(epicId)) {
       newSelection.delete(epicId);
@@ -381,46 +409,56 @@ const QuarterlyRoadmap: React.FC = () => {
       newSelection.add(epicId);
     }
     setSelectedEpics(newSelection);
-  };
+  }, [selectedEpics]);
 
   // Filter epics based on search and filters, excluding those already assigned to other quarters
-  const filteredAvailableEpics = availableEpics.filter(epic => {
-    // First check if epic is already assigned to another quarter
-    if (assignedEpicIds.has(epic.id)) {
-      return false; // Don't show epics that are already in other quarters
-    }
-    
-    const matchesSearch = epicSearchTerm === '' || 
-      epic.name.toLowerCase().includes(epicSearchTerm.toLowerCase());
-    const matchesTheme = selectedThemeFilter === '' || epic.themeName === selectedThemeFilter;
-    const matchesInitiative = selectedInitiativeFilter === '' || epic.initiativeName === selectedInitiativeFilter;
-    const matchesTrack = selectedTrackFilter === '' || epic.track === selectedTrackFilter;
-    
-    return matchesSearch && matchesTheme && matchesInitiative && matchesTrack;
-  });
+  const filteredAvailableEpics = useMemo(() => {
+    return availableEpics.filter(epic => {
+      // First check if epic is already assigned to another quarter
+      if (assignedEpicIds.has(epic.id)) {
+        return false; // Don't show epics that are already in other quarters
+      }
+      
+      const matchesSearch = epicSearchTerm === '' || 
+        epic.name.toLowerCase().includes(epicSearchTerm.toLowerCase());
+      const matchesTheme = selectedThemeFilter === '' || epic.themeName === selectedThemeFilter;
+      const matchesInitiative = selectedInitiativeFilter === '' || epic.initiativeName === selectedInitiativeFilter;
+      const matchesTrack = selectedTrackFilter === '' || epic.track === selectedTrackFilter;
+      
+      return matchesSearch && matchesTheme && matchesInitiative && matchesTrack;
+    });
+  }, [availableEpics, assignedEpicIds, epicSearchTerm, selectedThemeFilter, selectedInitiativeFilter, selectedTrackFilter]);
+  
 
   // Get unique values for filter options
-  const uniqueThemes = Array.from(new Set(availableEpics.map(epic => epic.themeName).filter(Boolean)));
-  const uniqueInitiatives = Array.from(new Set(availableEpics.map(epic => epic.initiativeName).filter(Boolean)));
-  const uniqueTracks = Array.from(new Set(availableEpics.map(epic => epic.track).filter(Boolean)));
+  const uniqueThemes = useMemo(() => {
+    return Array.from(new Set(availableEpics.map(epic => epic.themeName).filter(Boolean)));
+  }, [availableEpics]);
+  
+  const uniqueInitiatives = useMemo(() => {
+    return Array.from(new Set(availableEpics.map(epic => epic.initiativeName).filter(Boolean)));
+  }, [availableEpics]);
+  
+  const uniqueTracks = useMemo(() => {
+    return Array.from(new Set(availableEpics.map(epic => epic.track).filter(Boolean)));
+  }, [availableEpics]);
 
-  const clearEpicFilters = () => {
+  const clearEpicFilters = useCallback(() => {
     setEpicSearchTerm('');
     setSelectedThemeFilter('');
     setSelectedInitiativeFilter('');
     setSelectedTrackFilter('');
-  };
+  }, []);
 
   const StarRating: React.FC<{
     value: number;
     onChange?: (value: number) => void;
     readOnly?: boolean;
-  }> = ({ value, onChange, readOnly = false }) => {
+  }> = React.memo(({ value, onChange, readOnly = false }) => {
     const [hoverValue, setHoverValue] = useState(0);
 
     const handleClick = (rating: number) => {
       if (!readOnly && onChange) {
-        console.log('Star clicked, rating:', rating);
         onChange(rating);
       }
     };
@@ -469,7 +507,7 @@ const QuarterlyRoadmap: React.FC = () => {
         ))}
       </div>
     );
-  };
+  });
 
   if (loading || productLoading) {
     return (
@@ -505,7 +543,7 @@ const QuarterlyRoadmap: React.FC = () => {
 
   return (
     <div className="roadmap-container">
-      <div className="page-header">
+      <div className="quarterly-roadmap-page-header">
         <div className="header-top-row">
           <div className="header-left">
             <button 
@@ -515,7 +553,7 @@ const QuarterlyRoadmap: React.FC = () => {
             >
               <span className="material-icons">arrow_back</span>
             </button>
-            <h1 className="page-title">Roadmap Planner</h1>
+            <h1 className="quarterly-roadmap-page-title">Roadmap Planner</h1>
           </div>
           
           <div className="quarter-selector">
@@ -554,6 +592,10 @@ const QuarterlyRoadmap: React.FC = () => {
                 <button
                   onClick={() => {
                     loadAssignedEpicIds();
+                    // Pre-populate selectedEpics with epics already in current quarter
+                    const currentQuarterEpicIds = roadmapData?.roadmapItems?.map(item => item.epicId) || [];
+                    setSelectedEpics(new Set(currentQuarterEpicIds));
+                    setIsEditMode(false); // Ensure we're not in edit mode when adding epics
                     setShowEpicModal(true);
                   }}
                   className="add-epic-btn"
@@ -874,8 +916,14 @@ const QuarterlyRoadmap: React.FC = () => {
               </div>
               
               <div className="epic-selection-list">
-                {filteredAvailableEpics.map(epic => (
-                  <div 
+                {filteredAvailableEpics.length === 0 ? (
+                  <div className="no-epics-message">
+                    No epics available. Available epics count: {availableEpics.length}, 
+                    Assigned epics: {assignedEpicIds.size}
+                  </div>
+                ) : (
+                  filteredAvailableEpics.map(epic => (
+                    <div 
                     key={epic.id} 
                     className={`epic-selection-item ${selectedEpics.has(epic.id) ? 'selected' : ''}`}
                     onClick={(e) => {
@@ -894,8 +942,9 @@ const QuarterlyRoadmap: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                    </div>
+                  ))
+                )}
               </div>
             </div>
             
@@ -910,7 +959,7 @@ const QuarterlyRoadmap: React.FC = () => {
                 className="btn-confirm"
                 onClick={saveRoadmap}
               >
-                Add Selected Epics
+                Save Changes
               </button>
             </div>
           </div>
@@ -920,4 +969,4 @@ const QuarterlyRoadmap: React.FC = () => {
   );
 };
 
-export default QuarterlyRoadmap;
+export default React.memo(QuarterlyRoadmap);

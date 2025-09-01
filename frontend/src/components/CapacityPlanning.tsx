@@ -107,7 +107,6 @@ const CapacityPlanning: React.FC = () => {
       }
     } catch (err: any) {
       setError('Failed to load teams');
-      console.error(err);
     }
   };
 
@@ -128,7 +127,6 @@ const CapacityPlanning: React.FC = () => {
         throw new Error('Failed to load effort rating configs');
       }
     } catch (err: any) {
-      console.error('Failed to load effort rating configs:', err);
     }
   };
 
@@ -185,7 +183,6 @@ const CapacityPlanning: React.FC = () => {
       }
     } catch (err: any) {
       setError('Failed to load capacity plan');
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -241,7 +238,6 @@ const CapacityPlanning: React.FC = () => {
       }
     } catch (err: any) {
       setError('Failed to remove team');
-      console.error(err);
     }
   };
 
@@ -282,15 +278,8 @@ const CapacityPlanning: React.FC = () => {
   };
 
   const autoFillEffortRatingsAfterSave = async () => {
-    console.log('=== AUTO-FILL EFFORT RATINGS AFTER SAVE ==='); // Called after capacity plan save
-    console.log('Product:', product);
-    console.log('Capacity Plan:', capacityPlan);
-    console.log('Epics count:', epics.length);
-    console.log('Effort Unit:', effortUnit);
-    console.log('Effort Rating Configs:', effortRatingConfigs);
     
     if (!product || !capacityPlan || epics.length === 0) {
-      console.error('Missing required data for auto-fill');
       return;
     }
     
@@ -299,10 +288,8 @@ const CapacityPlanning: React.FC = () => {
       
       // Get the effort rating config for the current unit type
       const config = effortRatingConfigs.find(c => c.unitType === effortUnit);
-      console.log('Found config for unit type', effortUnit, ':', config);
       
       if (!config) {
-        console.error(`No effort rating configuration found for ${effortUnit}`);
         setError(`No effort rating configuration found for ${effortUnit}`);
         return;
       }
@@ -310,7 +297,6 @@ const CapacityPlanning: React.FC = () => {
       // Calculate total effort for each epic and determine star rating
       const epicRatings: { [epicId: string]: { epicName: string; totalEffort: number; starRating: number } } = {};
       
-      console.log('Processing epics:');
       epics.forEach(epic => {
         const totalEffort = getTotalEffortForEpic(epic);
         let starRating = 1;
@@ -346,16 +332,13 @@ const CapacityPlanning: React.FC = () => {
           starRating
         };
         
-        console.log(`Epic "${epic.epicName}" (${epic.epicId}): ${totalEffort} ${effortUnit.toLowerCase()} → ${starRating} stars`);
       });
       
-      console.log('Updating roadmap planner with ratings:', epicRatings);
       
       // Update roadmap planner with calculated star ratings
       const roadmapUpdatePromises = Object.entries(epicRatings).map(async ([epicId, rating]) => {
         try {
           const url = `http://localhost:8080/api/products/${product.productId}/roadmap/${selectedYear}/${selectedQuarter}/epics/${epicId}/effort-rating`;
-          console.log('Calling API:', url, 'with rating:', rating.starRating);
           
           const response = await fetch(url, {
             method: 'PUT',
@@ -369,14 +352,8 @@ const CapacityPlanning: React.FC = () => {
           });
           
           if (!response.ok) {
-            console.warn(`Failed to update effort rating for epic ${epicId}. Status: ${response.status}`);
-            const errorText = await response.text();
-            console.warn('Error response:', errorText);
-          } else {
-            console.log(`Successfully updated effort rating for epic ${epicId} to ${rating.starRating} stars`);
           }
         } catch (err) {
-          console.warn(`Error updating effort rating for epic ${epicId}:`, err);
         }
       });
       
@@ -384,10 +361,8 @@ const CapacityPlanning: React.FC = () => {
       
       // Log success message (no alert needed since this happens automatically)
       const successMessage = `Auto-filled effort ratings for ${Object.keys(epicRatings).length} epics based on capacity planning totals`;
-      console.log(successMessage);
       
     } catch (err: any) {
-      console.error('Error in autoFillEffortRatingsAfterSave:', err);
       setError('Failed to auto-fill effort ratings');
     } finally {
       setSaving(false);
@@ -442,7 +417,6 @@ const CapacityPlanning: React.FC = () => {
       }
     } catch (err: any) {
       setError('Failed to save capacity plan');
-      console.error(err);
     } finally {
       setSaving(false);
     }
@@ -520,7 +494,6 @@ const CapacityPlanning: React.FC = () => {
       }
     } catch (err: any) {
       setError('Failed to update effort rating config');
-      console.error(err);
     }
   };
 

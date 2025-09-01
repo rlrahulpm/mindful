@@ -343,23 +343,7 @@
   margin-bottom: 24px;
 }
 
-.btn-primary {
-  background: var(--primary-orange);
-  color: var(--white);
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.btn-primary:hover {
-  background: var(--primary-orange-light);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(217, 127, 90, 0.2);
-}
+/* Removed duplicate .btn-primary styles - using global styles from index.css */
 
 .capacity-table-container {
   background: var(--white);

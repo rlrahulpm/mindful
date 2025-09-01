@@ -14,28 +14,27 @@
   border-bottom: 2px solid var(--gray-lighter);
 }
 
-.back-button {
+.admin-back-button {
   background: rgba(217, 127, 90, 0.08);
-  border: none;
   color: var(--primary-orange);
-  padding: 12px 24px;
-  border-radius: 50px;
+  border: none;
+  padding: 12px;
+  border-radius: 50%;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 10px;
-  text-decoration: none;
-  min-width: 130px;
   justify-content: center;
+  width: 44px;
+  height: 44px;
   backdrop-filter: blur(10px);
   position: relative;
   overflow: hidden;
 }
 
-.back-button::before {
+.admin-back-button::before {
   content: '';
   position: absolute;
   top: 0;
@@ -46,13 +45,28 @@
   transition: left 0.5s;
 }
 
-.back-button:hover::before {
+.admin-back-button:hover::before {
   left: 100%;
 }
 
-.back-button:hover {
-  background: rgba(217, 127, 90, 0.12);
-  transform: translateY(-2px);
+.admin-back-button .material-icons {
+  font-size: 18px;
+  transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.admin-back-button:hover {
+  background: var(--primary-orange);
+  color: var(--black);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px rgba(217, 127, 90, 0.3);
+}
+
+.admin-back-button:hover .material-icons {
+  transform: translateX(-2px);
+}
+
+.admin-back-button:active {
+  transform: translateY(0);
   box-shadow: 0 4px 12px rgba(217, 127, 90, 0.2);
 }
 

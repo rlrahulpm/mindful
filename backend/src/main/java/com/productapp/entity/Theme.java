@@ -1,32 +1,34 @@
 package com.productapp.entity;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.ArrayList;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
-@Table(name = "product_hypothesis")
+@Table(name = "themes")
 @EntityListeners(AuditingEntityListener.class)
-public class ProductHypothesis {
+public class Theme {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id", nullable = false, unique = true)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = false)
+    @JsonIgnore
     private Product product;
     
-    @Column(name = "hypothesis_statement", columnDefinition = "TEXT")
-    private String hypothesisStatement;
+    @Column(name = "name", nullable = false)
+    private String name;
     
-    @Column(name = "success_metrics", columnDefinition = "TEXT")
-    private String successMetrics;
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
+    
+    @Column(name = "color", nullable = false, length = 7)
+    private String color;
     
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -36,12 +38,17 @@ public class ProductHypothesis {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     
-    public ProductHypothesis() {}
+    // Constructors
+    public Theme() {}
     
-    public ProductHypothesis(Product product) {
+    public Theme(Product product, String name, String description, String color) {
         this.product = product;
+        this.name = name;
+        this.description = description;
+        this.color = color;
     }
     
+    // Getters and Setters
     public Long getId() {
         return id;
     }
@@ -58,20 +65,28 @@ public class ProductHypothesis {
         this.product = product;
     }
     
-    public String getHypothesisStatement() {
-        return hypothesisStatement;
+    public String getName() {
+        return name;
     }
     
-    public void setHypothesisStatement(String hypothesisStatement) {
-        this.hypothesisStatement = hypothesisStatement;
+    public void setName(String name) {
+        this.name = name;
     }
     
-    public String getSuccessMetrics() {
-        return successMetrics;
+    public String getDescription() {
+        return description;
     }
     
-    public void setSuccessMetrics(String successMetrics) {
-        this.successMetrics = successMetrics;
+    public void setDescription(String description) {
+        this.description = description;
+    }
+    
+    public String getColor() {
+        return color;
+    }
+    
+    public void setColor(String color) {
+        this.color = color;
     }
     
     public LocalDateTime getCreatedAt() {

@@ -78,6 +78,10 @@ const ProductBacklog: React.FC = () => {
   const [selectedInitiativeFilter, setSelectedInitiativeFilter] = useState('');
   const [selectedTrackFilter, setSelectedTrackFilter] = useState('');
   const [deletingEpicId, setDeletingEpicId] = useState<string | null>(null);
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+  const [epicToDelete, setEpicToDelete] = useState<Epic | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const deleteRequestRef = useRef<Set<string>>(new Set());
 
   // Filtered epics based on search and filters
   const filteredEpics = useMemo(() => {
@@ -583,49 +587,11 @@ const ProductBacklog: React.FC = () => {
   };
 
 
-  const deleteEpic = async (epicId: string) => {
-    if (!window.confirm('Are you sure you want to delete this epic? This action cannot be undone.')) {
-      return;
-    }
-
-    try {
-      setDeletingEpicId(epicId);
-      setError('');
-
-      // Update local state first (optimistic update)
-      const updatedEpics = epics.filter(epic => epic.id !== epicId);
-      setEpics(updatedEpics);
-
-      // Save to backend with updated epics array
-      const response = await fetch(`http://localhost:8080/api/v3/products/${product?.productId}/backlog`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          epics: JSON.stringify(updatedEpics)
-        })
-      });
-
-      if (response.ok) {
-        const savedData = await response.json();
-        setProductBacklog(savedData);
-        setSuccessMessage('Epic deleted successfully!');
-        
-        // Clear success message after 3 seconds
-        setTimeout(() => setSuccessMessage(''), 3000);
-      } else {
-        // Roll back the optimistic update
-        setEpics(epics);
-        throw new Error('Failed to delete epic');
-      }
-    } catch (error: any) {
-      // Roll back the optimistic update
-      setEpics(epics);
-      setError('Failed to delete epic. Please try again.');
-    } finally {
-      setDeletingEpicId(null);
+  const deleteEpic = (epicId: string) => {
+    const epic = epics.find(e => e.id === epicId);
+    if (epic) {
+      setEpicToDelete(epic);
+      setShowDeleteConfirmModal(true);
     }
   };
 
@@ -719,6 +685,199 @@ const ProductBacklog: React.FC = () => {
     );
   }
 
+  // Delete Confirmation Modal Component
+  const DeleteConfirmationModal = () => {
+    const [holdProgress, setHoldProgress] = useState(0);
+    const [isHolding, setIsHolding] = useState(false);
+    const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
+    const [hasTriggered, setHasTriggered] = useState(false);
+
+    const startHold = (e: React.MouseEvent | React.TouchEvent) => {
+      // Prevent duplicate events on touch devices
+      e.preventDefault();
+      
+      if (isHolding || hasTriggered) return;
+      setIsHolding(true);
+      
+      const interval = setInterval(() => {
+        setHoldProgress(prev => {
+          const newProgress = prev + 2; // Increment by 2% every 60ms (3 seconds total)
+          if (newProgress >= 100 && !hasTriggered) {
+            setHasTriggered(true);
+            clearInterval(interval);
+            handleDeleteConfirm();
+            return 100;
+          }
+          return newProgress;
+        });
+      }, 60);
+      setIntervalId(interval);
+    };
+
+    const stopHold = () => {
+      setIsHolding(false);
+      setHoldProgress(0);
+      if (intervalId) {
+        clearInterval(intervalId);
+        setIntervalId(null);
+      }
+    };
+
+    const handleDeleteConfirm = async () => {
+      console.log('handleDeleteConfirm called', { epicToDelete, isDeleting, hasTriggered });
+      
+      if (!epicToDelete || isDeleting || hasTriggered) {
+        console.log('Skipping delete - conditions not met');
+        return;
+      }
+      
+      const epicIdToDelete = epicToDelete.id;
+      
+      // Immediately prevent any further calls
+      setShowDeleteConfirmModal(false);
+      setEpicToDelete(null);
+      setHoldProgress(0);
+      setIsHolding(false);
+      setHasTriggered(false);
+      if (intervalId) {
+        clearInterval(intervalId);
+        setIntervalId(null);
+      }
+      // Close the view modal if it's open
+      if (showViewEpicModal) {
+        setShowViewEpicModal(false);
+        setViewingEpic(null);
+      }
+      
+      // Use the captured ID instead of epicToDelete which is now null
+      await performDelete(epicIdToDelete);
+    };
+
+    const handleCancel = () => {
+      stopHold();
+      setShowDeleteConfirmModal(false);
+      setEpicToDelete(null);
+    };
+
+    return (
+      <div className="product-backlog-modal-overlay" onClick={handleCancel}>
+        <div className="product-backlog-modal-content delete-confirmation-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="product-backlog-modal-header">
+            <h2>Delete Epic</h2>
+            <button className="product-backlog-modal-close-btn" onClick={handleCancel}>
+              <span className="material-icons">close</span>
+            </button>
+          </div>
+          <div className="product-backlog-modal-body delete-modal-body">
+            <div className="warning-icon">
+              <span className="material-icons">warning</span>
+            </div>
+            <div className="delete-message">
+              <p><strong>Are you sure you want to delete "{epicToDelete?.name}"?</strong></p>
+              <p className="warning-text">This action cannot be undone. This epic may be referenced in other parts of the system including roadmaps and hypotheses.</p>
+            </div>
+          </div>
+          <div className="product-backlog-modal-footer delete-modal-footer">
+            <button onClick={handleCancel} className="btn-cancel">Cancel</button>
+            <button 
+              className={`btn-delete-hold ${isHolding ? 'holding' : ''}`}
+              onMouseDown={startHold}
+              onMouseUp={stopHold}
+              onMouseLeave={stopHold}
+              disabled={holdProgress >= 100 || hasTriggered}
+            >
+              <div className="hold-progress" style={{ width: `${holdProgress}%` }}></div>
+              <span className="hold-text">
+                {holdProgress >= 100 ? 'Deleting...' : 'Hold to Delete'}
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+  
+  const performDelete = async (epicId: string) => {
+    // Use ref to prevent duplicate calls (survives React.StrictMode double-rendering)
+    if (deleteRequestRef.current.has(epicId)) {
+      console.log('Delete already in progress for epic:', epicId);
+      return;
+    }
+    
+    const requestId = `delete-${epicId}-${Date.now()}`;
+    console.log('Starting delete request:', requestId);
+    
+    // Mark this epic as being deleted
+    deleteRequestRef.current.add(epicId);
+    
+    try {
+      setIsDeleting(true);
+      setDeletingEpicId(epicId);
+      
+      // Clear any existing messages at the start
+      setError('');
+      setSuccessMessage('');
+
+      // Save to backend with updated epics array (without the deleted epic)
+      const updatedEpics = epics.filter(epic => epic.id !== epicId);
+      
+      console.log(`Making API call for ${requestId}`);
+      const response = await fetch(`http://localhost:8080/api/v3/products/${product?.productId}/backlog`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'X-Request-Id': requestId
+        },
+        body: JSON.stringify({
+          epics: JSON.stringify(updatedEpics)
+        })
+      });
+
+      if (response.ok) {
+        // Deletion successful - update UI immediately
+        setEpics(updatedEpics);
+        setSuccessMessage('Epic deleted successfully!');
+        
+        // Try to parse response data if available
+        try {
+          const responseText = await response.text();
+          if (responseText.trim()) {
+            const savedData = JSON.parse(responseText);
+            setProductBacklog(savedData);
+            
+            if (savedData && savedData.epics) {
+              const parsedEpics = typeof savedData.epics === 'string' 
+                ? JSON.parse(savedData.epics) 
+                : savedData.epics;
+              setEpics(parsedEpics);
+            }
+          }
+        } catch (parseError) {
+          // Response parsing failed but deletion succeeded, keep the optimistic update
+          console.warn('Response parsing failed but deletion succeeded');
+        }
+        
+        setTimeout(() => setSuccessMessage(''), 3000);
+      } else {
+        // Deletion failed
+        const errorText = await response.text();
+        console.error('Delete failed:', response.status, errorText);
+        setError('Failed to delete epic. Please try again.');
+      }
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      setError('Failed to delete epic. Please try again.');
+    } finally {
+      setDeletingEpicId(null);
+      setIsDeleting(false);
+      // Clean up after a short delay to handle any trailing duplicate calls
+      setTimeout(() => {
+        deleteRequestRef.current.delete(epicId);
+      }, 1000);
+    }
+  };
+
   return (
     <div className="product-backlog-container">
       <div className="product-backlog-page-header">
@@ -753,7 +912,7 @@ const ProductBacklog: React.FC = () => {
         <div className="form-section">
           <div className="section-header">
             <div className="section-icon">
-              <span className="material-icons">view_kanban</span>
+              <span className="material-icons">task_alt</span>
             </div>
             <div className="section-info">
               <h3 className="section-title">Epic Management</h3>
@@ -1308,7 +1467,6 @@ const ProductBacklog: React.FC = () => {
                     onClick={() => {
                       if (viewingEpic) {
                         deleteEpic(viewingEpic.id);
-                        closeViewEpicModal();
                       }
                     }}
                     className="btn-delete"
@@ -1339,6 +1497,9 @@ const ProductBacklog: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirmModal && <DeleteConfirmationModal />}
     </div>
   );
 };

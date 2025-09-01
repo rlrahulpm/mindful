@@ -845,20 +845,20 @@ const QuarterlyRoadmap: React.FC = () => {
             
             <div className="modal-body">
               <div className="epic-filters">
-                <div className="search-bar">
-                  <div className="search-input-wrapper">
-                    <span className="material-icons search-icon">search</span>
-                    <input
-                      type="text"
-                      placeholder="Search epics..."
-                      value={epicSearchTerm}
-                      onChange={(e) => setEpicSearchTerm(e.target.value)}
-                      className="search-input"
-                    />
-                  </div>
-                </div>
-                
                 <div className="filter-controls">
+                  <div className="search-bar">
+                    <div className="search-input-wrapper">
+                      <span className="material-icons search-icon">search</span>
+                      <input
+                        type="text"
+                        placeholder="Search epics..."
+                        value={epicSearchTerm}
+                        onChange={(e) => setEpicSearchTerm(e.target.value)}
+                        className="search-input"
+                      />
+                    </div>
+                  </div>
+                  
                   <select
                     value={selectedThemeFilter}
                     onChange={(e) => setSelectedThemeFilter(e.target.value)}
@@ -912,6 +912,7 @@ const QuarterlyRoadmap: React.FC = () => {
                     <span className="epic-info"> ({assignedEpicIds.size} in other quarters)</span>
                   )}
                 </span>
+                <span className="epic-separator">•</span>
                 <span className="selected-count">{selectedEpics.size} selected</span>
               </div>
               

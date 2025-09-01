@@ -75,12 +75,14 @@ const RoadmapVisualization: React.FC = () => {
       if (response.ok) {
         try {
           const data = await response.json();
-          const quarterItems = data.roadmapItems?.map((item: any) => ({
-            ...item,
-            id: `${selectedYear}-${selectedQuarter}-${item.epicId}`,
-            year: selectedYear,
-            quarter: selectedQuarter
-          })) || [];
+          const quarterItems = data.roadmapItems?.map((item: any) => {
+            return {
+              ...item,
+              id: `${selectedYear}-${selectedQuarter}-${item.epicId}`,
+              year: selectedYear,
+              quarter: selectedQuarter
+            };
+          }) || [];
           
           setSelectedQuarterData(quarterItems);
         } catch (parseError) {
@@ -109,15 +111,6 @@ const RoadmapVisualization: React.FC = () => {
     }
   }, []);
 
-  const getPriorityColor = useCallback((priority: string): string => {
-    switch (priority.toLowerCase()) {
-      case 'critical': return '#e74c3c';
-      case 'high': return '#e67e22';
-      case 'medium': return '#f39c12';
-      case 'low': return '#27ae60';
-      default: return '#95a5a6';
-    }
-  }, []);
 
 
   const filteredGanttData = selectedQuarterData;
@@ -288,9 +281,12 @@ const RoadmapVisualization: React.FC = () => {
                     groups[groupKey] = {
                       initiativeName,
                       themeName,
-                      themeColor: item.themeColor || '#95a5a6',
+                      themeColor: item.themeColor || '#95a5a6', // Use gray as fallback
                       items: []
                     };
+                  } else if (item.themeColor && !groups[groupKey].themeColor) {
+                    // Update theme color if current group doesn't have one but this item does
+                    groups[groupKey].themeColor = item.themeColor;
                   }
                   
                   groups[groupKey].items.push(item);
@@ -358,8 +354,9 @@ const RoadmapVisualization: React.FC = () => {
                                       className="gantt-bar"
                                       style={{
                                         ...barStyle,
-                                        backgroundColor: group.themeColor ? `${group.themeColor}80` : `${getStatusColor(item.status)}80`
-                                      }}
+                                        '--theme-color': item.themeColor || group.themeColor || getStatusColor(item.status),
+                                        backgroundColor: item.themeColor || group.themeColor || getStatusColor(item.status)
+                                      } as React.CSSProperties}
                                     >
                                       <div className="gantt-bar-content">
                                         {item.startDate && item.endDate && (

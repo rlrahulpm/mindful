@@ -1,32 +1,34 @@
 package com.productapp.entity;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.ArrayList;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
-@Table(name = "product_hypothesis")
+@Table(name = "assumptions")
 @EntityListeners(AuditingEntityListener.class)
-public class ProductHypothesis {
+public class Assumption {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id", nullable = false, unique = true)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = false)
+    @JsonIgnore
     private Product product;
     
-    @Column(name = "hypothesis_statement", columnDefinition = "TEXT")
-    private String hypothesisStatement;
+    @Column(name = "assumption", nullable = false, columnDefinition = "TEXT")
+    private String assumption;
     
-    @Column(name = "success_metrics", columnDefinition = "TEXT")
-    private String successMetrics;
+    @Column(name = "confidence", nullable = false, length = 50)
+    private String confidence; // Low, Medium, High
+    
+    @Column(name = "impact", nullable = false, length = 50)
+    private String impact; // Low, Medium, High
     
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -36,12 +38,17 @@ public class ProductHypothesis {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     
-    public ProductHypothesis() {}
+    // Constructors
+    public Assumption() {}
     
-    public ProductHypothesis(Product product) {
+    public Assumption(Product product, String assumption, String confidence, String impact) {
         this.product = product;
+        this.assumption = assumption;
+        this.confidence = confidence;
+        this.impact = impact;
     }
     
+    // Getters and Setters
     public Long getId() {
         return id;
     }
@@ -58,20 +65,28 @@ public class ProductHypothesis {
         this.product = product;
     }
     
-    public String getHypothesisStatement() {
-        return hypothesisStatement;
+    public String getAssumption() {
+        return assumption;
     }
     
-    public void setHypothesisStatement(String hypothesisStatement) {
-        this.hypothesisStatement = hypothesisStatement;
+    public void setAssumption(String assumption) {
+        this.assumption = assumption;
     }
     
-    public String getSuccessMetrics() {
-        return successMetrics;
+    public String getConfidence() {
+        return confidence;
     }
     
-    public void setSuccessMetrics(String successMetrics) {
-        this.successMetrics = successMetrics;
+    public void setConfidence(String confidence) {
+        this.confidence = confidence;
+    }
+    
+    public String getImpact() {
+        return impact;
+    }
+    
+    public void setImpact(String impact) {
+        this.impact = impact;
     }
     
     public LocalDateTime getCreatedAt() {

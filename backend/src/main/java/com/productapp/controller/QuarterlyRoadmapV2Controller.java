@@ -8,12 +8,14 @@ import com.productapp.entity.EpicEffort;
 import com.productapp.entity.EffortRatingConfig;
 import com.productapp.entity.CapacityPlan;
 import com.productapp.entity.BacklogEpic;
+import com.productapp.entity.Theme;
 import com.productapp.repository.QuarterlyRoadmapRepository;
 import com.productapp.repository.RoadmapItemRepository;
 import com.productapp.repository.EpicEffortRepository;
 import com.productapp.repository.EffortRatingConfigRepository;
 import com.productapp.repository.CapacityPlanRepository;
 import com.productapp.repository.BacklogEpicRepository;
+import com.productapp.repository.ThemeRepository;
 import com.productapp.service.QuarterlyRoadmapService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -59,6 +61,9 @@ public class QuarterlyRoadmapV2Controller {
     
     @Autowired
     private BacklogEpicRepository backlogEpicRepository;
+    
+    @Autowired
+    private ThemeRepository themeRepository;
     
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE;
 
@@ -218,20 +223,17 @@ public class QuarterlyRoadmapV2Controller {
                     dtoItem.setEffortRating(item.getEffortRating());
                 }
                 
-                // Set initiative and theme information from stored values or fetch from backlog
-                if (item.getInitiativeName() != null && item.getThemeName() != null) {
-                    // Use stored values if available
+                // Always fetch current theme color from backlog epic to ensure up-to-date colors
+                BacklogEpic epicDetails = getEpicDetails(roadmap.getProductId(), item.getEpicId());
+                if (epicDetails != null) {
+                    dtoItem.setInitiativeName(epicDetails.getInitiativeName());
+                    dtoItem.setThemeName(epicDetails.getThemeName());
+                    dtoItem.setThemeColor(epicDetails.getThemeColor());
+                } else {
+                    // Fallback to stored values if epic details not found
                     dtoItem.setInitiativeName(item.getInitiativeName());
                     dtoItem.setThemeName(item.getThemeName());
                     dtoItem.setThemeColor(item.getThemeColor());
-                } else {
-                    // Fetch from backlog epic if not stored
-                    BacklogEpic epicDetails = getEpicDetails(roadmap.getProductId(), item.getEpicId());
-                    if (epicDetails != null) {
-                        dtoItem.setInitiativeName(epicDetails.getInitiativeName());
-                        dtoItem.setThemeName(epicDetails.getThemeName());
-                        dtoItem.setThemeColor(epicDetails.getThemeColor());
-                    }
                 }
                 
                 // Format dates for response
@@ -326,12 +328,54 @@ public class QuarterlyRoadmapV2Controller {
     }
 
     /**
-     * Get epic details (initiative and theme information) from backlog
+     * Get epic details (initiative and theme information) from backlog with current theme colors
      */
     private BacklogEpic getEpicDetails(Long productId, String epicId) {
         try {
             Optional<BacklogEpic> epicOpt = backlogEpicRepository.findByProductIdAndEpicId(productId, epicId);
-            return epicOpt.orElse(null);
+            if (epicOpt.isPresent()) {
+                BacklogEpic epic = epicOpt.get();
+                
+                // Get current theme color from themes table instead of using stored value
+                if (epic.getThemeId() != null && !epic.getThemeId().isEmpty()) {
+                    try {
+                        Long themeIdLong = Long.parseLong(epic.getThemeId());
+                        Optional<Theme> themeOpt = themeRepository.findByIdAndProductId(themeIdLong, productId);
+                        if (themeOpt.isPresent()) {
+                            Theme currentTheme = themeOpt.get();
+                            epic.setThemeColor(currentTheme.getColor());
+                            epic.setThemeName(currentTheme.getName());
+                            logger.info("Updated epic details with current theme - EpicId: {}, ThemeColor: {}, ThemeName: {}", 
+                                       epicId, epic.getThemeColor(), epic.getThemeName());
+                        } else {
+                            // Try to find theme by name as fallback
+                            if (epic.getThemeName() != null && !epic.getThemeName().isEmpty()) {
+                                List<Theme> themes = themeRepository.findByProductId(productId);
+                                Optional<Theme> themeByName = themes.stream()
+                                    .filter(t -> t.getName().equals(epic.getThemeName()))
+                                    .findFirst();
+                                if (themeByName.isPresent()) {
+                                    Theme currentTheme = themeByName.get();
+                                    epic.setThemeColor(currentTheme.getColor());
+                                    epic.setThemeName(currentTheme.getName());
+                                    logger.info("Found theme by name - EpicId: {}, ThemeColor: {}, ThemeName: {}", 
+                                               epicId, epic.getThemeColor(), epic.getThemeName());
+                                } else {
+                                    logger.warn("Theme not found by ID or name for epic - EpicId: {}, ThemeId: {}, ThemeName: {}", 
+                                               epicId, epic.getThemeId(), epic.getThemeName());
+                                }
+                            } else {
+                                logger.warn("Theme not found for epic - EpicId: {}, ThemeId: {}", epicId, epic.getThemeId());
+                            }
+                        }
+                    } catch (NumberFormatException e) {
+                        logger.warn("Invalid theme ID format for epic - EpicId: {}, ThemeId: {}", epicId, epic.getThemeId());
+                    }
+                }
+                
+                return epic;
+            }
+            return null;
         } catch (Exception e) {
             logger.error("Error fetching epic details for productId: {}, epicId: {}", productId, epicId, e);
             return null;

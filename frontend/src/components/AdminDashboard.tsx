@@ -209,11 +209,10 @@ const AdminDashboard: React.FC = () => {
     <div className="modules-container">
       <button 
         onClick={() => navigate('/dashboard')} 
-        className="back-button"
+        className="admin-back-button"
         aria-label="Back to dashboard"
       >
         <span className="material-icons">arrow_back</span>
-        Back
       </button>
       <div className="modules-header">
         <div className="product-info">

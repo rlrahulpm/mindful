@@ -110,8 +110,9 @@ public class BacklogEpicController {
                     .map(BacklogEpic::getEpicId)
                     .collect(Collectors.toSet());
             
-            // Delete all existing epics for this product
-            backlogEpicRepository.deleteByProductId(productId);
+            // Use native query to delete all epics for this product
+            // This won't fail even if no records exist
+            backlogEpicRepository.deleteAllByProductIdNative(productId);
             
             // Parse and create new epics
             List<BacklogEpic> newEpics = new ArrayList<>();

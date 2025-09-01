@@ -71,7 +71,8 @@ public class QuarterlyRoadmapV2Controller {
     public ResponseEntity<QuarterlyRoadmapResponse> getRoadmap(
             @PathVariable Long productId,
             @PathVariable Integer year,
-            @PathVariable Integer quarter) {
+            @PathVariable Integer quarter,
+            @RequestParam(required = false, defaultValue = "false") Boolean publishedOnly) {
         
         
         try {
@@ -81,6 +82,14 @@ public class QuarterlyRoadmapV2Controller {
             if (roadmapOpt.isPresent()) {
                 QuarterlyRoadmap roadmap = roadmapOpt.get();
                 List<RoadmapItem> items = roadmapItemRepository.findByRoadmapId(roadmap.getId());
+                
+                // Filter by published status if requested (for visualization)
+                if (publishedOnly) {
+                    items = items.stream()
+                            .filter(item -> Boolean.TRUE.equals(item.getPublished()))
+                            .collect(Collectors.toList());
+                }
+                
                 roadmap.setRoadmapItems(items);
                 
                 
@@ -392,6 +401,82 @@ public class QuarterlyRoadmapV2Controller {
         
         public void setEffortRating(Integer effortRating) {
             this.effortRating = effortRating;
+        }
+    }
+    
+    @PostMapping("/{year}/{quarter}/publish")
+    @Transactional
+    public ResponseEntity<?> publishRoadmap(
+            @PathVariable Long productId,
+            @PathVariable Integer year,
+            @PathVariable Integer quarter) {
+        
+        try {
+            logger.info("Publishing roadmap for product: {}, year: {}, quarter: {}", productId, year, quarter);
+            
+            // Find the quarterly roadmap
+            Optional<QuarterlyRoadmap> roadmapOpt = quarterlyRoadmapRepository.findByProductIdAndYearAndQuarter(productId, year, quarter);
+            
+            if (roadmapOpt.isEmpty()) {
+                return ResponseEntity.status(404).body("Roadmap not found for the specified quarter");
+            }
+            
+            QuarterlyRoadmap roadmap = roadmapOpt.get();
+            
+            // Get all roadmap items for this quarter
+            List<RoadmapItem> items = roadmapItemRepository.findByRoadmapId(roadmap.getId());
+            
+            if (items.isEmpty()) {
+                return ResponseEntity.status(400).body("No items to publish in this quarter");
+            }
+            
+            // Separate items by status
+            List<RoadmapItem> itemsToPublish = new ArrayList<>();
+            List<RoadmapItem> itemsToRemove = new ArrayList<>();
+            
+            for (RoadmapItem item : items) {
+                if ("Proposed".equals(item.getStatus())) {
+                    // Proposed items should be removed from roadmap planner
+                    itemsToRemove.add(item);
+                } else if ("Committed".equals(item.getStatus()) || 
+                          "In-Progress".equals(item.getStatus()) || 
+                          "Complete".equals(item.getStatus()) || 
+                          "Carried Over".equals(item.getStatus())) {
+                    // These items should be published
+                    itemsToPublish.add(item);
+                    // Mark them as published
+                    item.setPublished(true);
+                    item.setPublishedDate(LocalDate.now());
+                }
+            }
+            
+            // Remove proposed items from roadmap
+            if (!itemsToRemove.isEmpty()) {
+                roadmapItemRepository.deleteAll(itemsToRemove);
+                logger.info("Removed {} proposed items from roadmap", itemsToRemove.size());
+            }
+            
+            // Save published items with their published status
+            if (!itemsToPublish.isEmpty()) {
+                roadmapItemRepository.saveAll(itemsToPublish);
+                logger.info("Published {} items to roadmap visualization", itemsToPublish.size());
+            }
+            
+            // Update roadmap publish status
+            roadmap.setPublished(true);
+            roadmap.setPublishedDate(LocalDate.now());
+            quarterlyRoadmapRepository.save(roadmap);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("publishedCount", itemsToPublish.size());
+            response.put("removedCount", itemsToRemove.size());
+            response.put("message", String.format("Successfully published Q%d %d roadmap", quarter, year));
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            logger.error("Error publishing roadmap for product: {}, year: {}, quarter: {}", productId, year, quarter, e);
+            return ResponseEntity.status(500).body("Failed to publish roadmap: " + e.getMessage());
         }
     }
 }

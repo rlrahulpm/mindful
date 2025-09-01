@@ -64,7 +64,7 @@ const RoadmapVisualization: React.FC = () => {
     
     try {
       const response = await fetch(
-        `http://localhost:8080/api/v2/products/${product.productId}/roadmap/${selectedYear}/${selectedQuarter}`,
+        `http://localhost:8080/api/v2/products/${product.productId}/roadmap/${selectedYear}/${selectedQuarter}?publishedOnly=true`,
         {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`

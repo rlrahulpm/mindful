@@ -67,6 +67,12 @@ public class RoadmapItem {
     @Column(name = "theme_color", length = 7)
     private String themeColor;
     
+    @Column(name = "published")
+    private Boolean published = false;
+    
+    @Column(name = "published_date")
+    private LocalDate publishedDate;
+    
     @Column(name = "created_at")
     private LocalDateTime createdAt;
     
@@ -252,5 +258,21 @@ public class RoadmapItem {
     
     public void setThemeColor(String themeColor) {
         this.themeColor = themeColor;
+    }
+    
+    public Boolean getPublished() {
+        return published;
+    }
+    
+    public void setPublished(Boolean published) {
+        this.published = published;
+    }
+    
+    public LocalDate getPublishedDate() {
+        return publishedDate;
+    }
+    
+    public void setPublishedDate(LocalDate publishedDate) {
+        this.publishedDate = publishedDate;
     }
 }

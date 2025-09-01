@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useProduct } from '../hooks/useProduct';
 import './QuarterlyRoadmap.css';
@@ -69,8 +69,12 @@ const QuarterlyRoadmap: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [inlineError, setInlineError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [isEditMode, setIsEditMode] = useState(false);
   const [showEpicModal, setShowEpicModal] = useState(false);
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const publishRequestRef = useRef<Set<string>>(new Set());
   const [selectedEpics, setSelectedEpics] = useState<Set<string>>(new Set());
   const [epicSearchTerm, setEpicSearchTerm] = useState('');
   const [selectedThemeFilter, setSelectedThemeFilter] = useState('');
@@ -293,6 +297,195 @@ const QuarterlyRoadmap: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePublishQuarter = () => {
+    if (!roadmapData?.roadmapItems?.length) {
+      setInlineError('No items to publish in this quarter');
+      return;
+    }
+    
+    setShowPublishModal(true);
+  };
+
+  const performPublish = async () => {
+    // Prevent duplicate calls
+    const publishKey = `${selectedYear}-Q${selectedQuarter}`;
+    if (publishRequestRef.current.has(publishKey)) {
+      console.log('Publish already in progress for:', publishKey);
+      return;
+    }
+
+    publishRequestRef.current.add(publishKey);
+    
+    try {
+      setIsPublishing(true);
+      setError('');
+      setInlineError('');
+
+      const response = await fetch(
+        `http://localhost:8080/api/v2/products/${product?.productId}/roadmap/${selectedYear}/${selectedQuarter}/publish`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        }
+      );
+
+      if (response.ok) {
+        setInlineError('');
+        // Reload roadmap data to reflect published state
+        await loadRoadmapData();
+        // Show success message
+        setSuccessMessage(`Successfully published Q${selectedQuarter} ${selectedYear} roadmap!`);
+        // Clear success message after 5 seconds
+        setTimeout(() => setSuccessMessage(''), 5000);
+      } else {
+        const errorText = await response.text();
+        setInlineError(errorText || 'Failed to publish roadmap');
+      }
+    } catch (error) {
+      console.error('Publish error:', error);
+      setInlineError('Failed to publish roadmap. Please try again.');
+    } finally {
+      setIsPublishing(false);
+      setTimeout(() => {
+        publishRequestRef.current.delete(publishKey);
+      }, 1000);
+    }
+  };
+
+  // Publish Confirmation Modal Component
+  const PublishConfirmationModal = () => {
+    const [holdProgress, setHoldProgress] = useState(0);
+    const [isHolding, setIsHolding] = useState(false);
+    const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
+    const [hasTriggered, setHasTriggered] = useState(false);
+
+    const startHold = (e: React.MouseEvent) => {
+      e.preventDefault();
+      
+      if (isHolding || hasTriggered) return;
+      setIsHolding(true);
+      
+      const interval = setInterval(() => {
+        setHoldProgress(prev => {
+          const newProgress = prev + 2; // Increment by 2% every 60ms (3 seconds total)
+          if (newProgress >= 100 && !hasTriggered) {
+            setHasTriggered(true);
+            clearInterval(interval);
+            // Call handlePublishConfirm after a small delay to ensure state updates
+            setTimeout(() => {
+              handlePublishConfirm(true);
+            }, 50);
+            return 100;
+          }
+          return newProgress;
+        });
+      }, 60);
+      setIntervalId(interval);
+    };
+
+    const stopHold = () => {
+      setIsHolding(false);
+      setHoldProgress(0);
+      if (intervalId) {
+        clearInterval(intervalId);
+        setIntervalId(null);
+      }
+    };
+
+    const handlePublishConfirm = async (forcePublish = false) => {
+      if (!forcePublish && (!hasTriggered || isPublishing)) {
+        return;
+      }
+      
+      // Close modal and reset state
+      setShowPublishModal(false);
+      setHoldProgress(0);
+      setIsHolding(false);
+      setHasTriggered(false);
+      if (intervalId) {
+        clearInterval(intervalId);
+        setIntervalId(null);
+      }
+      
+      // Perform the publish
+      await performPublish();
+    };
+
+    const handleCancel = () => {
+      stopHold();
+      setShowPublishModal(false);
+    };
+
+    // Count items by status
+    const committedCount = roadmapData?.roadmapItems?.filter(item => 
+      ['Committed', 'In-Progress', 'Complete', 'Carried Over'].includes(item.status)
+    ).length || 0;
+    
+    const proposedCount = roadmapData?.roadmapItems?.filter(item => 
+      item.status === 'Proposed'
+    ).length || 0;
+
+    return (
+      <div className="modal-overlay" onClick={handleCancel}>
+        <div className="epic-selection-modal publish-confirmation-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-header">
+            <h3>Publish Q{selectedQuarter} {selectedYear} Roadmap</h3>
+            <button className="modal-close-btn" onClick={handleCancel}>
+              <span className="material-icons">close</span>
+            </button>
+          </div>
+          
+          <div className="modal-body publish-modal-body">
+            <div className="warning-icon">
+              <span className="material-icons">publish</span>
+            </div>
+            
+            <div className="publish-message">
+              <p><strong>Are you sure you want to publish this quarter's roadmap?</strong></p>
+              
+              <div className="publish-summary">
+                <div className="summary-item">
+                  <span className="material-icons success">check_circle</span>
+                  <span>{committedCount} items will be published to Roadmap Visualization</span>
+                </div>
+                {proposedCount > 0 && (
+                  <div className="summary-item">
+                    <span className="material-icons warning">info</span>
+                    <span>{proposedCount} proposed items will be removed from this planner</span>
+                  </div>
+                )}
+              </div>
+              
+              <p className="warning-text">
+                Published items (Committed, In-Progress, Complete, Carried Over) will appear in the Roadmap Visualization. 
+                Proposed items will be removed from the planner and remain in the backlog only.
+              </p>
+            </div>
+          </div>
+          
+          <div className="modal-actions publish-modal-footer">
+            <button onClick={handleCancel} className="btn-cancel">Cancel</button>
+            <button 
+              className={`btn-publish-hold ${isHolding ? 'holding' : ''}`}
+              onMouseDown={startHold}
+              onMouseUp={stopHold}
+              onMouseLeave={stopHold}
+              disabled={holdProgress >= 100 || hasTriggered || isPublishing}
+            >
+              <div className="hold-progress" style={{ width: `${holdProgress}%` }}></div>
+              <span className="hold-text">
+                {holdProgress >= 100 ? 'Publishing...' : 'Hold to Publish'}
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const updateRoadmapItem = async (epicId: string, field: keyof RoadmapItem, value: string | number) => {
@@ -650,6 +843,22 @@ const QuarterlyRoadmap: React.FC = () => {
           </div>
         )}
         
+        {successMessage && !loading && (
+          <div className="inline-success-banner">
+            <div className="success-content">
+              <span className="material-icons success-icon">check_circle</span>
+              <span className="success-message">{successMessage}</span>
+            </div>
+            <button 
+              onClick={() => setSuccessMessage('')} 
+              className="success-dismiss"
+              aria-label="Dismiss success message"
+            >
+              <span className="material-icons">close</span>
+            </button>
+          </div>
+        )}
+        
         <div className="quarter-info">
           <div className="quarter-header">
             <span className="material-icons quarter-icon">timeline</span>
@@ -826,6 +1035,26 @@ const QuarterlyRoadmap: React.FC = () => {
               </table>
             </div>
           )}
+          
+          {/* Publish Section - only show when not in edit mode and items exist */}
+          {!isEditMode && roadmapData?.roadmapItems && roadmapData.roadmapItems.length > 0 && (
+            <div className="roadmap-publish-section">
+              <div className="publish-info">
+                <span className="material-icons">publish</span>
+                <div className="publish-text">
+                  <h3>Ready to publish this quarter?</h3>
+                  <p>Committed items will move to Roadmap Visualization. Proposed items will be removed.</p>
+                </div>
+              </div>
+              <button
+                onClick={() => handlePublishQuarter()}
+                className="publish-btn"
+              >
+                <span className="material-icons">publish</span>
+                Publish Q{selectedQuarter} {selectedYear}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -966,6 +1195,9 @@ const QuarterlyRoadmap: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Publish Confirmation Modal */}
+      {showPublishModal && <PublishConfirmationModal />}
     </div>
   );
 };

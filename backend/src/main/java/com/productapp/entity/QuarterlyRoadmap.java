@@ -2,6 +2,7 @@ package com.productapp.entity;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.ArrayList;
@@ -26,6 +27,11 @@ public class QuarterlyRoadmap {
     @OneToMany(mappedBy = "roadmap", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<RoadmapItem> roadmapItems = new ArrayList<>();
     
+    @Column(name = "published")
+    private Boolean published = false;
+    
+    @Column(name = "published_date")
+    private LocalDate publishedDate;
     
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -111,5 +117,21 @@ public class QuarterlyRoadmap {
     
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+    
+    public Boolean getPublished() {
+        return published;
+    }
+    
+    public void setPublished(Boolean published) {
+        this.published = published;
+    }
+    
+    public LocalDate getPublishedDate() {
+        return publishedDate;
+    }
+    
+    public void setPublishedDate(LocalDate publishedDate) {
+        this.publishedDate = publishedDate;
     }
 }

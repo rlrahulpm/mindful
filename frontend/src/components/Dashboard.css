@@ -1,15 +1,15 @@
 .dashboard-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 40px 20px;
+  padding: 32px 24px;
 }
 
 .dashboard-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 40px;
-  padding-bottom: 20px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
   border-bottom: 2px solid var(--gray-lighter);
 }
 
@@ -135,10 +135,10 @@
   margin-top: 40px;
 }
 
-.section-title {
+.products-section .section-title {
   font-size: 1.4rem;
   color: var(--black);
-  margin-bottom: 24px;
+  margin-bottom: 32px !important;
 }
 
 .loading-state {
@@ -188,18 +188,21 @@
 
 .products-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
 }
 
 .product-card {
-  background-color: var(--white);
-  border-radius: 12px;
-  padding: 24px;
+  background: var(--white);
+  border-radius: 16px;
+  padding: 20px;
   box-shadow: var(--shadow-sm);
   transition: all 0.3s ease;
-  border: 2px solid transparent;
+  border: 2px solid var(--primary-orange-light);
   position: relative;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
 }
 
 .product-card.clickable {
@@ -209,25 +212,23 @@
 .product-card:hover {
   transform: translateY(-4px);
   box-shadow: var(--shadow-md);
-  border-color: var(--primary-orange-light);
-}
-
-.product-card.clickable:hover .action-text {
-  color: var(--primary-orange-dark);
+  border-color: var(--primary-orange);
+  background: linear-gradient(to bottom, var(--white), rgba(217, 127, 90, 0.02));
 }
 
 .product-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .product-name {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   color: var(--black);
   margin: 0;
   flex: 1;
+  font-weight: 600;
 }
 
 .product-id {
@@ -240,9 +241,9 @@
 }
 
 .product-meta {
-  padding-top: 16px;
+  padding-top: 12px;
   border-top: 1px solid var(--gray-lighter);
-  margin-bottom: 40px;
+  margin-top: auto;
 }
 
 .product-date {
@@ -250,17 +251,7 @@
   font-size: 0.9rem;
 }
 
-.product-action {
-  padding-top: 12px;
-}
-
-.action-text {
-  color: var(--primary-orange);
-  font-weight: 600;
-  font-size: 0.9rem;
-  opacity: 1;
-  transition: all 0.3s ease;
-}
+/* Action elements removed - cards are now clickable */
 
 @media (max-width: 768px) {
   .dashboard-header {

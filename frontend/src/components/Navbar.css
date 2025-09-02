@@ -245,8 +245,8 @@
 }
 
 .menu-link:hover {
-  background-color: var(--primary-orange-light);
-  color: var(--white);
+  background-color: rgba(217, 127, 90, 0.1);
+  color: var(--primary-orange);
 }
 
 .menu-button {

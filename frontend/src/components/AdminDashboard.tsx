@@ -13,12 +13,15 @@ const AdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [modalError, setModalError] = useState('');
   const [activeProductTab, setActiveProductTab] = useState<number | null>(null);
 
   // Modal states
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
+  const [showEditUserModal, setShowEditUserModal] = useState(false);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
 
   // Form states
   const [roleForm, setRoleForm] = useState<CreateRoleRequest>({
@@ -29,6 +32,9 @@ const AdminDashboard: React.FC = () => {
   const [userForm, setUserForm] = useState<CreateUserRequest>({
     email: '',
     password: '',
+    roleId: undefined
+  });
+  const [editUserForm, setEditUserForm] = useState<{ roleId: number | undefined }>({
     roleId: undefined
   });
 
@@ -112,8 +118,10 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const handleCreateRole = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreateRole = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    setModalError(''); // Clear any existing modal errors
+    
     try {
       if (editingRole) {
         const updatedRole = await adminService.updateRole(editingRole.id, roleForm);
@@ -127,11 +135,14 @@ const AdminDashboard: React.FC = () => {
       setShowRoleModal(false);
       setEditingRole(null);
       setRoleForm({ name: '', description: '', productModuleIds: [] });
+      setModalError('');
       
       // Clear success message after 3 seconds
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err: any) {
-      setError('Failed to save role');
+      console.error('Failed to save role:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to save role';
+      setModalError(errorMessage);
     }
   };
 
@@ -147,7 +158,10 @@ const AdminDashboard: React.FC = () => {
       // Clear success message after 3 seconds
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err: any) {
-      setError('Failed to create user');
+      console.error('Failed to create user:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to create user';
+      setError(errorMessage);
+      setTimeout(() => setError(''), 5000);
     }
   };
 
@@ -159,9 +173,58 @@ const AdminDashboard: React.FC = () => {
         setSuccessMessage('Role deleted successfully!');
         setTimeout(() => setSuccessMessage(''), 3000);
       } catch (err: any) {
-        setError('Failed to delete role');
+        console.error('Failed to delete role:', err);
+        const errorMessage = err.response?.data?.message || err.message || 'Failed to delete role';
+        setError(errorMessage);
+        setTimeout(() => setError(''), 5000);
       }
     }
+  };
+
+  const handleUpdateUser = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!editingUser) return;
+    
+    try {
+      const updatedUser = await adminService.updateUser(editingUser.id, {
+        roleId: editUserForm.roleId
+      });
+      setUsers(users.map(u => u.id === updatedUser.id ? updatedUser : u));
+      setShowEditUserModal(false);
+      setEditingUser(null);
+      setEditUserForm({ roleId: undefined });
+      setSuccessMessage('User updated successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (err: any) {
+      console.error('Failed to update user:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to update user';
+      setError(errorMessage);
+      setTimeout(() => setError(''), 5000);
+    }
+  };
+
+  const handleDeleteUser = async (userId: number) => {
+    if (window.confirm('Are you sure you want to delete this user?')) {
+      try {
+        await adminService.deleteUser(userId);
+        setUsers(users.filter(u => u.id !== userId));
+        setSuccessMessage('User deleted successfully!');
+        setTimeout(() => setSuccessMessage(''), 3000);
+      } catch (err: any) {
+        console.error('Failed to delete user:', err);
+        const errorMessage = err.response?.data?.message || err.message || 'Failed to delete user';
+        setError(errorMessage);
+        setTimeout(() => setError(''), 5000);
+      }
+    }
+  };
+
+  const openEditUser = (user: User) => {
+    setEditingUser(user);
+    setEditUserForm({
+      roleId: user.role?.id
+    });
+    setShowEditUserModal(true);
   };
 
   const openEditRole = (role: Role) => {
@@ -172,6 +235,7 @@ const AdminDashboard: React.FC = () => {
       productModuleIds: role.productModules.map(pm => pm.id)
     });
     setShowRoleModal(true);
+    setModalError('');
     // Reset product tab to first available product
     const products = getUniqueProducts();
     if (products.length > 0) {
@@ -207,17 +271,16 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div className="modules-container">
-      <button 
-        onClick={() => navigate('/dashboard')} 
-        className="admin-back-button"
-        aria-label="Back to dashboard"
-      >
-        <span className="material-icons">arrow_back</span>
-      </button>
       <div className="modules-header">
+        <button 
+          onClick={() => navigate('/dashboard')} 
+          className="admin-back-button"
+          aria-label="Back to dashboard"
+        >
+          <span className="material-icons">arrow_back</span>
+        </button>
         <div className="product-info">
           <h1 className="product-title">Admin Dashboard</h1>
-          <p className="product-subtitle">Manage roles and users across your organization</p>
         </div>
       </div>
 
@@ -250,6 +313,7 @@ const AdminDashboard: React.FC = () => {
             <button 
               onClick={() => {
                 setShowRoleModal(true);
+                setModalError('');
                 // Initialize product tab for new role creation
                 const products = getUniqueProducts();
                 if (products.length > 0) {
@@ -263,71 +327,71 @@ const AdminDashboard: React.FC = () => {
             </button>
           </div>
 
-          <div className="roles-grid">
-            {roles.map((role) => (
-              <div key={role.id} className="role-card">
-                <div className="card-header">
-                  <div className="card-icon">
-                    <span className="material-icons">badge</span>
-                  </div>
-                  <div className="card-info">
-                    <h3 className="card-title">{role.name}</h3>
-                    <p className="card-description">{role.description}</p>
-                  </div>
-                </div>
-                
-                <div className="card-content">
-                  <div className="modules-section">
-                    <h4 className="modules-title">
-                      <span className="material-icons">dashboard</span>
-                      Accessible Modules
-                    </h4>
-                    {groupModulesByProduct(role.productModules).map((group) => (
-                      <div key={group.productName} className="product-module-group">
-                        <h5 className="product-group-name">{group.productName}</h5>
-                        <div className="module-tags">
-                          {group.modules.map((productModule) => (
-                            <span key={productModule.id} className="module-tag">
-                              <span className="material-icons">extension</span>
-                              {productModule.module.name}
-                            </span>
-                          ))}
+          {roles.length === 0 ? (
+            <div className="empty-state-table">
+              <span className="material-icons">badge</span>
+              <h3>No roles created yet</h3>
+              <p>Create your first role to manage user permissions</p>
+            </div>
+          ) : (
+            <div className="table-container">
+              <table className="roles-table">
+                <thead>
+                  <tr>
+                    <th>Role Name</th>
+                    <th>Description</th>
+                    <th>Accessible Modules</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {roles.map((role) => (
+                    <tr key={role.id}>
+                      <td className="role-name-cell">
+                        <div className="role-name-wrapper">
+                          <span className="material-icons role-icon">badge</span>
+                          <span className="role-name">{role.name}</span>
                         </div>
-                      </div>
-                    ))}
-                    {role.productModules.length === 0 && (
-                      <p className="no-modules">No modules assigned</p>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="card-actions">
-                  <button 
-                    onClick={() => openEditRole(role)}
-                    className="action-btn edit-btn"
-                  >
-                    <span className="material-icons">edit</span>
-                    Edit
-                  </button>
-                  <button 
-                    onClick={() => handleDeleteRole(role.id)}
-                    className="action-btn delete-btn"
-                  >
-                    <span className="material-icons">delete</span>
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))}
-            
-            {roles.length === 0 && (
-              <div className="empty-state">
-                <span className="material-icons">badge</span>
-                <h3>No roles created yet</h3>
-                <p>Create your first role to manage user permissions</p>
-              </div>
-            )}
-          </div>
+                      </td>
+                      <td className="role-description-cell">{role.description}</td>
+                      <td className="role-modules-cell">
+                        {role.productModules.length === 0 ? (
+                          <span className="no-modules-text">No modules assigned</span>
+                        ) : (
+                          <div className="modules-list">
+                            {groupModulesByProduct(role.productModules).map((group) => (
+                              <div key={group.productName} className="module-group">
+                                <span className="product-label">{group.productName}:</span>
+                                <span className="module-names">
+                                  {group.modules.map(pm => pm.module.name).join(', ')}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </td>
+                      <td className="role-actions-cell">
+                        <button 
+                          onClick={() => openEditRole(role)}
+                          className="table-action-btn edit-btn"
+                          title="Edit Role"
+                        >
+                          <span className="material-icons">edit</span>
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteRole(role.id)}
+                          className="table-action-btn delete-btn"
+                          title="Delete Role"
+                        >
+                          <span className="material-icons">delete</span>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
@@ -344,42 +408,81 @@ const AdminDashboard: React.FC = () => {
             </button>
           </div>
 
-          <div className="users-grid">
-            {users.map((user) => (
-              <div key={user.id} className="user-card">
-                <div className="user-avatar">
-                  <span className="material-icons">account_circle</span>
-                </div>
-                <div className="user-info">
-                  <h3 className="user-email">{user.email}</h3>
-                  <div className="user-meta">
-                    <span className="user-role">
-                      <span className="material-icons">badge</span>
-                      {user.role?.name || 'No Role'}
-                    </span>
-                    {user.isSuperadmin && (
-                      <span className="badge badge-admin">
-                        <span className="material-icons">admin_panel_settings</span>
-                        Admin
-                      </span>
-                    )}
-                  </div>
-                  <p className="user-created">
-                    <span className="material-icons">calendar_today</span>
-                    Joined {new Date(user.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-            ))}
-            
-            {users.length === 0 && (
-              <div className="empty-state">
-                <span className="material-icons">people</span>
-                <h3>No users created yet</h3>
-                <p>Create your first user to grant system access</p>
-              </div>
-            )}
-          </div>
+          {users.length === 0 ? (
+            <div className="empty-state-table">
+              <span className="material-icons">people</span>
+              <h3>No users created yet</h3>
+              <p>Create your first user to grant system access</p>
+            </div>
+          ) : (
+            <div className="table-container">
+              <table className="users-table">
+                <thead>
+                  <tr>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Created Date</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((user) => (
+                    <tr key={user.id}>
+                      <td className="user-email-cell">
+                        <div className="user-email-wrapper">
+                          <span className="material-icons user-icon">account_circle</span>
+                          <span className="user-email">{user.email}</span>
+                        </div>
+                      </td>
+                      <td className="user-role-cell">
+                        <span className="role-badge">
+                          <span className="material-icons">badge</span>
+                          {user.role?.name || 'No Role'}
+                        </span>
+                      </td>
+                      <td className="user-status-cell">
+                        {user.isSuperadmin ? (
+                          <span className="badge badge-admin">
+                            <span className="material-icons">admin_panel_settings</span>
+                            Superadmin
+                          </span>
+                        ) : (
+                          <span className="badge badge-user">
+                            <span className="material-icons">person</span>
+                            User
+                          </span>
+                        )}
+                      </td>
+                      <td className="user-created-cell">
+                        <span className="date-text">
+                          <span className="material-icons">calendar_today</span>
+                          {new Date(user.createdAt).toLocaleDateString()}
+                        </span>
+                      </td>
+                      <td className="user-actions-cell">
+                        <button 
+                          onClick={() => openEditUser(user)}
+                          className="table-action-btn edit-btn"
+                          title="Edit User"
+                        >
+                          <span className="material-icons">edit</span>
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteUser(user.id)}
+                          className="table-action-btn delete-btn"
+                          title="Delete User"
+                          disabled={user.isSuperadmin}
+                        >
+                          <span className="material-icons">delete</span>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
@@ -389,6 +492,7 @@ const AdminDashboard: React.FC = () => {
           setShowRoleModal(false);
           setEditingRole(null);
           setRoleForm({ name: '', description: '', productModuleIds: [] });
+          setModalError('');
         }}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
@@ -403,14 +507,21 @@ const AdminDashboard: React.FC = () => {
                   setShowRoleModal(false);
                   setEditingRole(null);
                   setRoleForm({ name: '', description: '', productModuleIds: [] });
+                  setModalError('');
                 }}
                 className="modal-close-btn"
               >
                 <span className="material-icons">close</span>
               </button>
             </div>
-            <form onSubmit={handleCreateRole} className="modal-form">
-              <div className="form-group">
+            <div className="modal-body">
+              {modalError && (
+                <div className="alert alert-error" style={{ marginBottom: '24px' }}>
+                  {modalError}
+                </div>
+              )}
+              <form onSubmit={handleCreateRole} className="modal-form">
+                <div className="form-group">
                 <label htmlFor="roleName" className="form-label">
                   <span className="material-icons">label</span>
                   Role Name
@@ -446,8 +557,6 @@ const AdminDashboard: React.FC = () => {
                   <span className="material-icons">dashboard</span>
                   Grant Access to Modules
                 </label>
-                <p className="form-help-text">Select which modules this role can access</p>
-                
                 {getUniqueProducts().length > 0 && (
                   <div className="product-module-tabs">
                     {/* Product Tabs */}
@@ -495,27 +604,121 @@ const AdminDashboard: React.FC = () => {
                   </div>
                 )}
               </div>
+              </form>
+            </div>
+            
+            <div className="modal-actions">
+              <button 
+                type="button"
+                onClick={() => {
+                  setShowRoleModal(false);
+                  setEditingRole(null);
+                  setRoleForm({ name: '', description: '', productModuleIds: [] });
+                  setModalError('');
+                }}
+                className="btn-secondary"
+              >
+                Cancel
+              </button>
+              <button 
+                type="button"
+                onClick={handleCreateRole}
+                className="btn-primary"
+              >
+                <span className="material-icons">
+                  {editingRole ? 'save' : 'add'}
+                </span>
+                {editingRole ? 'Update Role' : 'Create Role'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-              <div className="modal-actions">
-                <button 
-                  type="button"
-                  onClick={() => {
-                    setShowRoleModal(false);
-                    setEditingRole(null);
-                    setRoleForm({ name: '', description: '', productModuleIds: [] });
-                  }}
-                  className="btn-secondary"
-                >
-                  Cancel
-                </button>
-                <button type="submit" className="btn-primary">
-                  <span className="material-icons">
-                    {editingRole ? 'save' : 'add'}
-                  </span>
-                  {editingRole ? 'Update Role' : 'Create Role'}
-                </button>
-              </div>
-            </form>
+      {/* Edit User Modal */}
+      {showEditUserModal && editingUser && (
+        <div className="modal-overlay" onClick={() => {
+          setShowEditUserModal(false);
+          setEditingUser(null);
+          setEditUserForm({ roleId: undefined });
+        }}>
+          <div className="modal-content modal-small" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="modal-title">
+                <span className="material-icons">edit</span>
+                Edit User
+              </h3>
+              <button 
+                onClick={() => {
+                  setShowEditUserModal(false);
+                  setEditingUser(null);
+                  setEditUserForm({ roleId: undefined });
+                }}
+                className="modal-close-btn"
+              >
+                <span className="material-icons">close</span>
+              </button>
+            </div>
+            <div className="modal-body">
+              <form onSubmit={handleUpdateUser} className="modal-form">
+                <div className="form-group">
+                  <label className="form-label">
+                    <span className="material-icons">email</span>
+                    Email (Read-only)
+                  </label>
+                  <input
+                    type="email"
+                    value={editingUser.email}
+                    disabled
+                    className="form-control disabled"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="editUserRole" className="form-label">
+                    <span className="material-icons">badge</span>
+                    Role
+                  </label>
+                  <select
+                    id="editUserRole"
+                    value={editUserForm.roleId || ''}
+                    onChange={(e) => setEditUserForm({ 
+                      roleId: e.target.value ? Number(e.target.value) : undefined 
+                    })}
+                    className="form-control"
+                  >
+                    <option value="">No Role</option>
+                    {roles.map((role) => (
+                      <option key={role.id} value={role.id}>
+                        {role.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </form>
+            </div>
+            
+            <div className="modal-actions">
+              <button 
+                type="button"
+                onClick={() => {
+                  setShowEditUserModal(false);
+                  setEditingUser(null);
+                  setEditUserForm({ roleId: undefined });
+                }}
+                className="btn-secondary"
+              >
+                Cancel
+              </button>
+              <button 
+                type="button"
+                onClick={handleUpdateUser}
+                className="btn-primary"
+              >
+                <span className="material-icons">save</span>
+                Update User
+              </button>
+            </div>
           </div>
         </div>
       )}

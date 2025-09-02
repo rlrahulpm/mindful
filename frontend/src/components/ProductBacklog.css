@@ -37,12 +37,12 @@
   border: none;
   color: var(--primary-orange);
   padding: 12px;
-  border-radius: 12px;
+  border-radius: 50%;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
   width: 44px;

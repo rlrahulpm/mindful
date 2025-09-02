@@ -175,9 +175,6 @@ const Dashboard: React.FC = () => {
                     Created {formatDate(product.createdAt)}
                   </span>
                 </div>
-                <div className="product-action">
-                  <span className="action-text">Click to view modules →</span>
-                </div>
               </div>
             ))}
           </div>

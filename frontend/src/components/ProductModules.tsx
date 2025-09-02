@@ -139,7 +139,27 @@ const ProductModules: React.FC = () => {
         {filteredModules.map((productModule) => (
           <div 
             key={productModule.id} 
-            className={`module-card ${productModule.isEnabled ? 'enabled' : 'disabled'}`}
+            className={`module-card ${productModule.isEnabled ? 'enabled clickable' : 'disabled'}`}
+            onClick={() => {
+              if (productModule.isEnabled) {
+                window.scrollTo(0, 0);
+                if (productModule.module.name === 'Product Basics') {
+                  navigate(`/products/${productSlug}/modules/basics`);
+                } else if (productModule.module.name === 'Market & Competition Analysis') {
+                  navigate(`/products/${productSlug}/modules/market-competition`);
+                } else if (productModule.module.name === 'Product Hypothesis') {
+                  navigate(`/products/${productSlug}/modules/hypothesis`);
+                } else if (productModule.module.name === 'Product Backlog') {
+                  navigate(`/products/${productSlug}/modules/backlog`);
+                } else if (productModule.module.name === 'Roadmap Planner') {
+                  navigate(`/products/${productSlug}/modules/roadmap`);
+                } else if (productModule.module.name === 'Roadmap') {
+                  navigate(`/products/${productSlug}/modules/roadmap-visualization`);
+                } else if (productModule.module.name === 'Capacity Planning') {
+                  navigate(`/products/${productSlug}/modules/capacity-planning`);
+                }
+              }
+            }}
           >
             <div className="module-icon">
               <span className="material-icons">
@@ -155,33 +175,6 @@ const ProductModules: React.FC = () => {
             <div className="module-content">
               <h3 className="module-name">{productModule.module.name}</h3>
               <p className="module-description">{productModule.module.description}</p>
-            </div>
-            
-            <div className="module-actions">
-              <button 
-                className="view-btn"
-                onClick={() => {
-                  window.scrollTo(0, 0);
-                  if (productModule.module.name === 'Product Basics') {
-                    navigate(`/products/${productSlug}/modules/basics`);
-                  } else if (productModule.module.name === 'Market & Competition Analysis') {
-                    navigate(`/products/${productSlug}/modules/market-competition`);
-                  } else if (productModule.module.name === 'Product Hypothesis') {
-                    navigate(`/products/${productSlug}/modules/hypothesis`);
-                  } else if (productModule.module.name === 'Product Backlog') {
-                    navigate(`/products/${productSlug}/modules/backlog`);
-                  } else if (productModule.module.name === 'Roadmap Planner') {
-                    navigate(`/products/${productSlug}/modules/roadmap`);
-                  } else if (productModule.module.name === 'Roadmap') {
-                    navigate(`/products/${productSlug}/modules/roadmap-visualization`);
-                  } else if (productModule.module.name === 'Capacity Planning') {
-                    navigate(`/products/${productSlug}/modules/capacity-planning`);
-                  } else {
-                  }
-                }}
-              >
-                View
-              </button>
             </div>
           </div>
         ))}

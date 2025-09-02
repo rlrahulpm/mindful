@@ -38,6 +38,10 @@ export const adminService = {
     return response.data;
   },
 
+  deleteUser: async (userId: number): Promise<void> => {
+    await api.delete(`/admin/users/${userId}`);
+  },
+
   // Module management
   getModules: async (): Promise<Module[]> => {
     const response = await api.get('/admin/modules');

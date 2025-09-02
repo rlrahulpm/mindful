@@ -1532,21 +1532,22 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 12px 24px;
+  background: linear-gradient(135deg, var(--primary-orange), #c96a4a);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px rgba(217, 127, 90, 0.25);
 }
 
 .publish-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 6px 20px rgba(217, 127, 90, 0.4);
+  background: linear-gradient(135deg, #c96a4a, #b8603f);
 }
 
 .publish-btn:disabled {
@@ -1708,10 +1709,11 @@
   justify-content: space-between;
   margin-top: 32px;
   padding: 24px;
-  background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
-  border: 2px solid #e3e8ff;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.1);
+  background: rgba(217, 127, 90, 0.03);
+  border: 1px solid rgba(217, 127, 90, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s ease;
 }
 
 .publish-info {
@@ -1722,32 +1724,33 @@
 }
 
 .publish-info .material-icons {
-  font-size: 48px;
-  color: #667eea;
-  background: white;
+  font-size: 40px;
+  color: var(--primary-orange);
+  background: rgba(217, 127, 90, 0.1);
   padding: 12px;
-  border-radius: 50%;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
 }
 
 .publish-text h3 {
   margin: 0 0 8px 0;
-  color: #2d3748;
-  font-size: 20px;
+  color: var(--black);
+  font-size: 18px;
   font-weight: 700;
 }
 
 .publish-text p {
   margin: 0;
-  color: #64748b;
+  color: var(--gray-medium);
   font-size: 14px;
   line-height: 1.5;
 }
 
 .roadmap-publish-section .publish-btn {
   padding: 14px 28px;
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 600;
   white-space: nowrap;
   min-width: auto;
 }

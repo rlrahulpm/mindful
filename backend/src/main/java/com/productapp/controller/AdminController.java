@@ -175,18 +175,9 @@ public class AdminController {
         
         
         List<Role> roles;
-        // Both global superadmins and organization superadmins should only see roles used in their organization
-        if (currentUser.getOrganization() == null) {
-            throw new IllegalStateException("User organization is null - cannot filter roles");
-        }
-        
-        // Get roles that are actually assigned to users in the same organization
-        List<User> organizationUsers = userRepository.findByOrganizationId(currentUser.getOrganization().getId());
-        roles = organizationUsers.stream()
-                .filter(user -> user.getRole() != null)
-                .map(User::getRole)
-                .distinct()
-                .collect(Collectors.toList());
+        // Show all roles - both global superadmins and organization superadmins can see all roles
+        // Note: In a multi-tenant system, you might want to filter by organization, but for now show all roles
+        roles = roleRepository.findAllOrderByName();
         
         
         List<RoleResponse> response = roles.stream()
@@ -202,14 +193,19 @@ public class AdminController {
             @Valid @RequestBody CreateRoleRequest request,
             Authentication authentication) {
         
+        logger.info("Creating role with name: {}", request.getName());
+        
         checkSuperadmin(authentication);
         
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
         User currentUser = userRepository.findById(userPrincipal.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userPrincipal.getId()));
         
+        logger.info("Current user: {}, organization: {}", currentUser.getEmail(), 
+                currentUser.getOrganization() != null ? currentUser.getOrganization().getName() : "null");
         
         if (roleRepository.existsByName(request.getName())) {
+            logger.warn("Role with name '{}' already exists", request.getName());
             throw new IllegalArgumentException("Role with name '" + request.getName() + "' already exists");
         }
         
@@ -242,7 +238,13 @@ public class AdminController {
             role.setProductModules(productModules);
         }
         
-        role = roleRepository.save(role);
+        try {
+            role = roleRepository.save(role);
+            logger.info("Successfully created role with id {}", role.getId());
+        } catch (Exception e) {
+            logger.error("Failed to save new role: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to create role: " + e.getMessage());
+        }
         
         return ResponseEntity.ok(convertToRoleResponse(role, currentUser));
     }
@@ -259,7 +261,14 @@ public class AdminController {
         Role role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new ResourceNotFoundException("Role", "id", roleId));
         
-        if (request.getName() != null) {
+        if (request.getName() != null && !request.getName().equals(role.getName())) {
+            // Check if the new name already exists for a different role
+            logger.info("Checking if role name '{}' already exists for a different role than {}", request.getName(), roleId);
+            if (roleRepository.existsByNameAndIdNot(request.getName(), roleId)) {
+                logger.warn("Role with name '{}' already exists", request.getName());
+                throw new IllegalArgumentException("Role with name '" + request.getName() + "' already exists");
+            }
+            logger.info("Updating role name from '{}' to '{}'", role.getName(), request.getName());
             role.setName(request.getName());
         }
         if (request.getDescription() != null) {
@@ -275,7 +284,16 @@ public class AdminController {
             role.setProductModules(productModules);
         }
         
-        role = roleRepository.save(role);
+        try {
+            role = roleRepository.save(role);
+            logger.info("Successfully updated role with id {}", roleId);
+        } catch (Exception e) {
+            logger.error("Failed to save role with id {}: {}", roleId, e.getMessage());
+            if (e.getMessage().contains("Duplicate entry") && e.getMessage().contains("key 'roles.name'")) {
+                throw new IllegalArgumentException("Role with this name already exists");
+            }
+            throw new RuntimeException("Failed to update role: " + e.getMessage());
+        }
         
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
         User currentUser = userRepository.findById(userPrincipal.getId())
@@ -396,11 +414,35 @@ public class AdminController {
             Role role = roleRepository.findById(request.getRoleId())
                     .orElseThrow(() -> new ResourceNotFoundException("Role", "id", request.getRoleId()));
             user.setRole(role);
+        } else {
+            // Allow removing role by setting null
+            user.setRole(null);
         }
         
         user = userRepository.save(user);
         
         return ResponseEntity.ok(convertToUserResponse(user));
+    }
+    
+    @DeleteMapping("/users/{userId}")
+    @Operation(summary = "Delete user", description = "Delete a user")
+    public ResponseEntity<Void> deleteUser(
+            @PathVariable Long userId,
+            Authentication authentication) {
+        
+        checkSuperadmin(authentication);
+        
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+        
+        // Don't allow deleting superadmin users
+        if (user.getIsSuperadmin() != null && user.getIsSuperadmin()) {
+            throw new IllegalArgumentException("Cannot delete superadmin users");
+        }
+        
+        userRepository.delete(user);
+        
+        return ResponseEntity.ok().build();
     }
     
     // Get all modules for role creation

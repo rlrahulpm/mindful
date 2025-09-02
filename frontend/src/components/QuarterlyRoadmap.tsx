@@ -778,7 +778,7 @@ const QuarterlyRoadmap: React.FC = () => {
                 className="edit-mode-btn"
               >
                 <span className="material-icons">edit</span>
-                Edit Mode
+                Edit
               </button>
             ) : (
               <div className="edit-mode-controls">

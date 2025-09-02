@@ -20,8 +20,15 @@ const AdminDashboard: React.FC = () => {
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
   const [showEditUserModal, setShowEditUserModal] = useState(false);
+  const [showDeleteRoleModal, setShowDeleteRoleModal] = useState(false);
+  const [showDeleteUserModal, setShowDeleteUserModal] = useState(false);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [holdProgress, setHoldProgress] = useState(0);
+  const [isHolding, setIsHolding] = useState(false);
+  const [hasTriggered, setHasTriggered] = useState(false);
 
   // Form states
   const [roleForm, setRoleForm] = useState<CreateRoleRequest>({
@@ -165,19 +172,22 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const deleteRole = (role: Role) => {
+    setRoleToDelete(role);
+    setShowDeleteRoleModal(true);
+  };
+
   const handleDeleteRole = async (roleId: number) => {
-    if (window.confirm('Are you sure you want to delete this role?')) {
-      try {
-        await adminService.deleteRole(roleId);
-        setRoles(roles.filter(r => r.id !== roleId));
-        setSuccessMessage('Role deleted successfully!');
-        setTimeout(() => setSuccessMessage(''), 3000);
-      } catch (err: any) {
-        console.error('Failed to delete role:', err);
-        const errorMessage = err.response?.data?.message || err.message || 'Failed to delete role';
-        setError(errorMessage);
-        setTimeout(() => setError(''), 5000);
-      }
+    try {
+      await adminService.deleteRole(roleId);
+      setRoles(roles.filter(r => r.id !== roleId));
+      setSuccessMessage('Role deleted successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (err: any) {
+      console.error('Failed to delete role:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to delete role';
+      setError(errorMessage);
+      setTimeout(() => setError(''), 5000);
     }
   };
 
@@ -203,20 +213,77 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const deleteUser = (user: User) => {
+    setUserToDelete(user);
+    setShowDeleteUserModal(true);
+  };
+
   const handleDeleteUser = async (userId: number) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
-      try {
-        await adminService.deleteUser(userId);
-        setUsers(users.filter(u => u.id !== userId));
-        setSuccessMessage('User deleted successfully!');
-        setTimeout(() => setSuccessMessage(''), 3000);
-      } catch (err: any) {
-        console.error('Failed to delete user:', err);
-        const errorMessage = err.response?.data?.message || err.message || 'Failed to delete user';
-        setError(errorMessage);
-        setTimeout(() => setError(''), 5000);
-      }
+    try {
+      await adminService.deleteUser(userId);
+      setUsers(users.filter(u => u.id !== userId));
+      setSuccessMessage('User deleted successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (err: any) {
+      console.error('Failed to delete user:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to delete user';
+      setError(errorMessage);
+      setTimeout(() => setError(''), 5000);
     }
+  };
+
+  // Hold-to-delete functionality
+  const startHold = () => {
+    setIsHolding(true);
+    setHasTriggered(false);
+    const interval = setInterval(() => {
+      setHoldProgress(prev => {
+        if (prev >= 100) {
+          setHasTriggered(true);
+          clearInterval(interval);
+          return 100;
+        }
+        return prev + 2;
+      });
+    }, 20);
+
+    const timeout = setTimeout(() => {
+      clearInterval(interval);
+      if (!hasTriggered) {
+        // Trigger deletion
+        if (roleToDelete) {
+          handleDeleteRole(roleToDelete.id);
+          setShowDeleteRoleModal(false);
+          setRoleToDelete(null);
+        } else if (userToDelete) {
+          handleDeleteUser(userToDelete.id);
+          setShowDeleteUserModal(false);
+          setUserToDelete(null);
+        }
+        resetHoldState();
+      }
+    }, 2000);
+
+    // Store interval and timeout for cleanup
+    (window as any).holdInterval = interval;
+    (window as any).holdTimeout = timeout;
+  };
+
+  const stopHold = () => {
+    setIsHolding(false);
+    if ((window as any).holdInterval) {
+      clearInterval((window as any).holdInterval);
+    }
+    if ((window as any).holdTimeout) {
+      clearTimeout((window as any).holdTimeout);
+    }
+    setTimeout(() => resetHoldState(), 200);
+  };
+
+  const resetHoldState = () => {
+    setHoldProgress(0);
+    setIsHolding(false);
+    setHasTriggered(false);
   };
 
   const openEditUser = (user: User) => {
@@ -379,7 +446,7 @@ const AdminDashboard: React.FC = () => {
                           <span className="material-icons">edit</span>
                         </button>
                         <button 
-                          onClick={() => handleDeleteRole(role.id)}
+                          onClick={() => deleteRole(role)}
                           className="table-action-btn delete-btn"
                           title="Delete Role"
                         >
@@ -469,7 +536,7 @@ const AdminDashboard: React.FC = () => {
                           <span className="material-icons">edit</span>
                         </button>
                         <button 
-                          onClick={() => handleDeleteUser(user.id)}
+                          onClick={() => deleteUser(user)}
                           className="table-action-btn delete-btn"
                           title="Delete User"
                           disabled={user.isSuperadmin}
@@ -819,6 +886,106 @@ const AdminDashboard: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Role Confirmation Modal */}
+      {showDeleteRoleModal && (
+        <div className="admin-modal-overlay" onClick={() => {
+          setShowDeleteRoleModal(false);
+          setRoleToDelete(null);
+          resetHoldState();
+        }}>
+          <div className="admin-modal-content delete-confirmation-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="admin-modal-header">
+              <h2>Delete Role</h2>
+              <button className="admin-modal-close-btn" onClick={() => {
+                setShowDeleteRoleModal(false);
+                setRoleToDelete(null);
+                resetHoldState();
+              }}>
+                <span className="material-icons">close</span>
+              </button>
+            </div>
+            <div className="admin-modal-body delete-modal-body">
+              <div className="warning-icon">
+                <span className="material-icons">warning</span>
+              </div>
+              <div className="delete-message">
+                <p><strong>Are you sure you want to delete "{roleToDelete?.name}"?</strong></p>
+                <p className="warning-text">This action cannot be undone. This role may be assigned to users and could affect their system access.</p>
+              </div>
+            </div>
+            <div className="admin-modal-footer delete-modal-footer">
+              <button onClick={() => {
+                setShowDeleteRoleModal(false);
+                setRoleToDelete(null);
+                resetHoldState();
+              }} className="btn-cancel">Cancel</button>
+              <button 
+                className={`btn-delete-hold ${isHolding ? 'holding' : ''}`}
+                onMouseDown={startHold}
+                onMouseUp={stopHold}
+                onMouseLeave={stopHold}
+                disabled={holdProgress >= 100 || hasTriggered}
+              >
+                <div className="hold-progress" style={{ width: `${holdProgress}%` }}></div>
+                <span className="hold-text">
+                  {holdProgress >= 100 ? 'Deleting...' : 'Hold to Delete'}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete User Confirmation Modal */}
+      {showDeleteUserModal && (
+        <div className="admin-modal-overlay" onClick={() => {
+          setShowDeleteUserModal(false);
+          setUserToDelete(null);
+          resetHoldState();
+        }}>
+          <div className="admin-modal-content delete-confirmation-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="admin-modal-header">
+              <h2>Delete User</h2>
+              <button className="admin-modal-close-btn" onClick={() => {
+                setShowDeleteUserModal(false);
+                setUserToDelete(null);
+                resetHoldState();
+              }}>
+                <span className="material-icons">close</span>
+              </button>
+            </div>
+            <div className="admin-modal-body delete-modal-body">
+              <div className="warning-icon">
+                <span className="material-icons">warning</span>
+              </div>
+              <div className="delete-message">
+                <p><strong>Are you sure you want to delete "{userToDelete?.email}"?</strong></p>
+                <p className="warning-text">This action cannot be undone. The user will lose access to the system immediately.</p>
+              </div>
+            </div>
+            <div className="admin-modal-footer delete-modal-footer">
+              <button onClick={() => {
+                setShowDeleteUserModal(false);
+                setUserToDelete(null);
+                resetHoldState();
+              }} className="btn-cancel">Cancel</button>
+              <button 
+                className={`btn-delete-hold ${isHolding ? 'holding' : ''}`}
+                onMouseDown={startHold}
+                onMouseUp={stopHold}
+                onMouseLeave={stopHold}
+                disabled={holdProgress >= 100 || hasTriggered}
+              >
+                <div className="hold-progress" style={{ width: `${holdProgress}%` }}></div>
+                <span className="hold-text">
+                  {holdProgress >= 100 ? 'Deleting...' : 'Hold to Delete'}
+                </span>
+              </button>
+            </div>
           </div>
         </div>
       )}

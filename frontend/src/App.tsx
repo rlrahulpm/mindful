@@ -17,6 +17,7 @@ const ProductBacklog = React.lazy(() => import('./components/ProductBacklog'));
 const QuarterlyRoadmap = React.lazy(() => import('./components/QuarterlyRoadmap'));
 const RoadmapVisualization = React.lazy(() => import('./components/RoadmapVisualization'));
 const CapacityPlanning = React.lazy(() => import('./components/CapacityPlanning'));
+const KanbanBoard = React.lazy(() => import('./components/KanbanBoard'));
 const AdminDashboard = React.lazy(() => import('./components/AdminDashboard'));
 
 function App() {
@@ -100,6 +101,14 @@ function App() {
               element={
                 <PrivateRoute>
                   <QuarterlyRoadmap />
+                </PrivateRoute>
+              } 
+            />
+            <Route 
+              path="/products/:productId/modules/kanban" 
+              element={
+                <PrivateRoute>
+                  <KanbanBoard />
                 </PrivateRoute>
               } 
             />

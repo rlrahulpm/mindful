@@ -157,6 +157,8 @@ const ProductModules: React.FC = () => {
                   navigate(`/products/${productSlug}/modules/roadmap-visualization`);
                 } else if (productModule.module.name === 'Capacity Planning') {
                   navigate(`/products/${productSlug}/modules/capacity-planning`);
+                } else if (productModule.module.name === 'Kanban Board') {
+                  navigate(`/products/${product?.productId}/modules/kanban`);
                 }
               }
             }}
@@ -167,6 +169,7 @@ const ProductModules: React.FC = () => {
                  productModule.module.name === 'Market & Competition Analysis' ? 'analytics' :
                  productModule.module.name === 'Product Hypothesis' ? 'lightbulb' :
                  productModule.module.name === 'Product Backlog' ? 'list_alt' :
+                 productModule.module.name === 'Kanban Board' ? 'view_kanban' :
                  productModule.module.name === 'Roadmap Planner' ? 'timeline' :
                  productModule.module.name === 'Roadmap' ? 'view_timeline' :
                  productModule.module.name === 'Capacity Planning' ? 'groups' : 'extension'}

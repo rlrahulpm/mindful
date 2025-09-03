@@ -14,6 +14,9 @@ import java.util.List;
 public interface RoadmapItemRepository extends JpaRepository<RoadmapItem, Long> {
     List<RoadmapItem> findByRoadmapId(Long roadmapId);
     
+    @Query("SELECT ri FROM RoadmapItem ri WHERE ri.roadmap.productId = :productId AND ri.roadmap.published = true")
+    List<RoadmapItem> findPublishedByProductId(@Param("productId") Long productId);
+    
     @Modifying
     @Transactional
     @Query("DELETE FROM RoadmapItem ri WHERE ri.epicId = :epicId AND ri.roadmap.productId = :productId")

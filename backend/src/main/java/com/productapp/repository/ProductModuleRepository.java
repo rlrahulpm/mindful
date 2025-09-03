@@ -1,5 +1,7 @@
 package com.productapp.repository;
 
+import com.productapp.entity.Product;
+import com.productapp.entity.Module;
 import com.productapp.entity.ProductModule;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -7,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ProductModuleRepository extends JpaRepository<ProductModule, Long> {
@@ -30,4 +33,6 @@ public interface ProductModuleRepository extends JpaRepository<ProductModule, Lo
            "WHERE p.organization.id = :organizationId " +
            "ORDER BY p.productName, m.displayOrder")
     List<ProductModule> findByProductOrganizationId(@Param("organizationId") Long organizationId);
+    
+    Optional<ProductModule> findByProductAndModule(Product product, Module module);
 }

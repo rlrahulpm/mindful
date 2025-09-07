@@ -950,10 +950,11 @@
   z-index: 1000;
   padding: 20px;
   backdrop-filter: blur(4px);
+  opacity: 1;
 }
 
 .modal-content {
-  background: var(--white);
+  background: #FFFFFF;
   border-radius: 20px;
   padding: 0;
   max-width: 600px;
@@ -964,6 +965,8 @@
   animation: modalSlideIn 0.3s ease-out;
   display: flex;
   flex-direction: column;
+  transform: translateY(0) scale(1);
+  opacity: 1;
 }
 
 @keyframes modalSlideIn {
@@ -990,7 +993,7 @@
 .modal-title {
   font-size: 1.4rem;
   font-weight: 700;
-  color: var(--black);
+  color: #1A1A1A;
   margin: 0 0 8px 0;
   display: flex;
   align-items: center;
@@ -999,14 +1002,14 @@
 
 .modal-title .material-icons {
   font-size: 28px;
-  color: var(--primary-orange);
+  color: #D97F5A;
 }
 
 .modal-close-btn {
   position: absolute;
   top: 16px;
   right: 16px;
-  background: var(--gray-lighter);
+  background: #E5E5E5;
   border: none;
   border-radius: 8px;
   width: 32px;
@@ -1019,12 +1022,12 @@
 }
 
 .modal-close-btn:hover {
-  background: var(--gray-light);
+  background: #999999;
 }
 
 .modal-close-btn .material-icons {
   font-size: 18px;
-  color: var(--gray-dark);
+  color: #333333;
 }
 
 .modal-body {
@@ -1257,8 +1260,8 @@
   gap: 12px;
   justify-content: flex-end;
   padding: 20px 32px;
-  border-top: 2px solid var(--gray-lighter);
-  background: var(--white);
+  border-top: 2px solid #E5E5E5;
+  background: #FFFFFF;
   flex-shrink: 0;
   position: sticky;
   bottom: 0;
@@ -1548,10 +1551,11 @@
   z-index: 1000;
   padding: 20px;
   backdrop-filter: blur(4px);
+  opacity: 1;
 }
 
 .admin-modal-content {
-  background: var(--white);
+  background: #FFFFFF;
   border-radius: 20px;
   padding: 0;
   max-width: 600px;
@@ -1562,6 +1566,8 @@
   animation: modalSlideIn 0.3s ease-out;
   display: flex;
   flex-direction: column;
+  transform: translateY(0) scale(1);
+  opacity: 1;
 }
 
 .admin-modal-header {

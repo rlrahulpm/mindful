@@ -16,6 +16,13 @@ public interface RoleRepository extends JpaRepository<Role, Long> {
     @Query("SELECT r FROM Role r ORDER BY r.name")
     List<Role> findAllOrderByName();
     
+    @Query("SELECT DISTINCT r FROM Role r " +
+           "LEFT JOIN r.productModules pm " +
+           "WHERE pm.product.organization.id = :organizationId " +
+           "OR r.productModules IS EMPTY " +
+           "ORDER BY r.name")
+    List<Role> findByOrganizationIdOrderByName(Long organizationId);
+    
     boolean existsByName(String name);
     
     boolean existsByNameAndIdNot(String name, Long id);

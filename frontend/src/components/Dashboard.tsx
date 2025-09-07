@@ -30,6 +30,13 @@ const Dashboard: React.FC = () => {
     if (showAddForm) {
       document.addEventListener('keydown', handleEscape);
       document.body.style.overflow = 'hidden'; // Prevent background scrolling
+      // Force CSS reflow to ensure styles are applied
+      requestAnimationFrame(() => {
+        const modalOverlay = document.querySelector('.modal-overlay') as HTMLElement;
+        if (modalOverlay) {
+          void modalOverlay.offsetHeight; // Force reflow
+        }
+      });
     }
 
     return () => {
@@ -50,8 +57,7 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const handleAddProduct = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAddProduct = async () => {
     if (!newProductName.trim()) return;
 
     try {
@@ -107,36 +113,39 @@ const Dashboard: React.FC = () => {
                 ×
               </button>
             </div>
-            <form onSubmit={handleAddProduct} className="modal-form">
-              <div className="form-group">
-                <label htmlFor="productName" className="form-label">Product Name</label>
-                <input
-                  type="text"
-                  id="productName"
-                  value={newProductName}
-                  onChange={(e) => setNewProductName(e.target.value)}
-                  placeholder="Enter product name"
-                  required
-                  className="form-control"
-                />
-              </div>
-              <div className="modal-actions">
-                <button 
-                  type="button"
-                  onClick={() => setShowAddForm(false)}
-                  className="btn btn-secondary"
-                >
-                  Cancel
-                </button>
-                <button 
-                  type="submit" 
-                  disabled={isAddingProduct}
-                  className="btn btn-primary"
-                >
-                  {isAddingProduct ? 'Adding...' : 'Add Product'}
-                </button>
-              </div>
-            </form>
+            <div className="modal-body">
+              <form onSubmit={handleAddProduct} className="modal-form">
+                <div className="form-group">
+                  <label htmlFor="productName" className="form-label">Product Name</label>
+                  <input
+                    type="text"
+                    id="productName"
+                    value={newProductName}
+                    onChange={(e) => setNewProductName(e.target.value)}
+                    placeholder="Enter product name"
+                    required
+                    className="form-control"
+                  />
+                </div>
+              </form>
+            </div>
+            <div className="modal-actions">
+              <button 
+                type="button"
+                onClick={() => setShowAddForm(false)}
+                className="btn btn-secondary"
+              >
+                Cancel
+              </button>
+              <button 
+                type="button"
+                onClick={handleAddProduct}
+                disabled={isAddingProduct}
+                className="btn btn-primary"
+              >
+                {isAddingProduct ? 'Adding...' : 'Add Product'}
+              </button>
+            </div>
           </div>
         </div>
       )}

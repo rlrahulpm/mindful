@@ -175,9 +175,16 @@ public class AdminController {
         
         
         List<Role> roles;
-        // Show all roles - both global superadmins and organization superadmins can see all roles
-        // Note: In a multi-tenant system, you might want to filter by organization, but for now show all roles
-        roles = roleRepository.findAllOrderByName();
+        if (currentUser.getIsGlobalSuperadmin() != null && currentUser.getIsGlobalSuperadmin()) {
+            // Global superadmins can see all roles
+            roles = roleRepository.findAllOrderByName();
+        } else {
+            // Organization superadmins can only see roles for their organization
+            if (currentUser.getOrganization() == null) {
+                throw new IllegalStateException("User organization is null - cannot filter roles");
+            }
+            roles = roleRepository.findByOrganizationIdOrderByName(currentUser.getOrganization().getId());
+        }
         
         
         List<RoleResponse> response = roles.stream()

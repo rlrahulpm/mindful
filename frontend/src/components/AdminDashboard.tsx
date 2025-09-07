@@ -812,39 +812,40 @@ const AdminDashboard: React.FC = () => {
                 <span className="material-icons">close</span>
               </button>
             </div>
-            <form onSubmit={handleCreateUser} className="modal-form">
-              <div className="form-group">
-                <label htmlFor="userEmail" className="form-label">
-                  <span className="material-icons">email</span>
-                  Email
-                </label>
-                <input
-                  type="email"
-                  id="userEmail"
-                  value={userForm.email}
-                  onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
-                  placeholder="Enter email address"
-                  required
-                  className="form-control"
-                />
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="userPassword" className="form-label">
-                  <span className="material-icons">lock</span>
-                  Password
-                </label>
-                <input
-                  type="password"
-                  id="userPassword"
-                  value={userForm.password}
-                  onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
-                  placeholder="Enter password (min 6 characters)"
-                  required
-                  minLength={6}
-                  className="form-control"
-                />
-              </div>
+            <div className="modal-body">
+              <form onSubmit={handleCreateUser} className="modal-form">
+                <div className="form-group">
+                  <label htmlFor="userEmail" className="form-label">
+                    <span className="material-icons">email</span>
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    id="userEmail"
+                    value={userForm.email}
+                    onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
+                    placeholder="Enter email address"
+                    required
+                    className="form-control"
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label htmlFor="userPassword" className="form-label">
+                    <span className="material-icons">lock</span>
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    id="userPassword"
+                    value={userForm.password}
+                    onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
+                    placeholder="Enter password (min 6 characters)"
+                    required
+                    minLength={6}
+                    className="form-control"
+                  />
+                </div>
 
               <div className="form-group">
                 <label htmlFor="userRole" className="form-label">
@@ -868,24 +869,28 @@ const AdminDashboard: React.FC = () => {
                   ))}
                 </select>
               </div>
-
-              <div className="modal-actions">
-                <button 
-                  type="button"
-                  onClick={() => {
-                    setShowUserModal(false);
-                    setUserForm({ email: '', password: '', roleId: undefined });
-                  }}
-                  className="btn-secondary"
-                >
-                  Cancel
-                </button>
-                <button type="submit" className="btn-primary">
-                  <span className="material-icons">person_add</span>
-                  Create User
-                </button>
-              </div>
-            </form>
+              </form>
+            </div>
+            <div className="modal-actions">
+              <button 
+                type="button"
+                onClick={() => {
+                  setShowUserModal(false);
+                  setUserForm({ email: '', password: '', roleId: undefined });
+                }}
+                className="btn-secondary"
+              >
+                Cancel
+              </button>
+              <button 
+                type="button"
+                onClick={handleCreateUser}
+                className="btn-primary"
+              >
+                <span className="material-icons">person_add</span>
+                Create User
+              </button>
+            </div>
           </div>
         </div>
       )}

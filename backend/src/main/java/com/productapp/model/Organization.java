@@ -1,5 +1,6 @@
 package com.productapp.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.productapp.entity.User;
 import com.productapp.entity.Product;
 import jakarta.persistence.*;
@@ -26,9 +27,11 @@ public class Organization {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     
+    @JsonIgnore
     @OneToMany(mappedBy = "organization", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<User> users;
     
+    @JsonIgnore
     @OneToMany(mappedBy = "organization", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Product> products;
     

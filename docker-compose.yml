@@ -1,0 +1,125 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: mindful-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-productdb}
+      MYSQL_USER: ${DATABASE_USERNAME:-mindful}
+      MYSQL_PASSWORD: ${DATABASE_PASSWORD:-mindful2025}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - mindful-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 5s
+      retries: 10
+      interval: 10s
+      start_period: 30s
+
+  # Backend Spring Boot Application
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: mindful-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-productdb}
+      DATABASE_USERNAME: ${DATABASE_USERNAME:-mindful}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-mindful2025}
+      JWT_SECRET: ${JWT_SECRET:-L9IpFzkQ1yerb0DzQfwYBXOMwrcQxKtfuFQGb5RCwUo=}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      DDL_AUTO: ${DDL_AUTO:-update}
+      SHOW_SQL: ${SHOW_SQL:-false}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      SERVER_PORT: 8080
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./backend/logs:/app/logs
+    networks:
+      - mindful-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      timeout: 10s
+      retries: 5
+      interval: 30s
+      start_period: 60s
+
+  # Frontend React Application
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: mindful-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+    networks:
+      - mindful-network
+    environment:
+      - REACT_APP_API_URL=http://backend:8080
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80"]
+      timeout: 5s
+      retries: 3
+      interval: 30s
+
+  # CRM React Application
+  crm:
+    build:
+      context: ./crm
+      dockerfile: Dockerfile
+    container_name: mindful-crm
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3001:80"
+    networks:
+      - mindful-network
+    environment:
+      - REACT_APP_API_URL=http://backend:8080
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80"]
+      timeout: 5s
+      retries: 3
+      interval: 30s
+
+  # Optional: phpMyAdmin for database management
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: mindful-phpmyadmin
+    restart: unless-stopped
+    depends_on:
+      - mysql
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      UPLOAD_LIMIT: 100M
+    ports:
+      - "8081:80"
+    networks:
+      - mindful-network
+
+networks:
+  mindful-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+    driver: local

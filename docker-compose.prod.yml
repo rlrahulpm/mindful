@@ -1,0 +1,29 @@
+# Production configuration for docker-compose
+# Use: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
+version: '3.8'
+
+services:
+  backend:
+    environment:
+      DDL_AUTO: validate
+      SHOW_SQL: false
+      LOG_LEVEL: WARN
+    restart: always
+    
+  frontend:
+    restart: always
+    environment:
+      - NODE_ENV=production
+      
+  crm:
+    restart: always
+    environment:
+      - NODE_ENV=production
+      
+  mysql:
+    restart: always
+    
+  # Remove phpMyAdmin in production
+  phpmyadmin:
+    deploy:
+      replicas: 0

@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: mindful-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: render
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: https://mindful.vercel.app,https://mindful-crm.vercel.app

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useProduct } from '../hooks/useProduct';
+import { API_BASE_URL } from '../config';
 import './QuarterlyRoadmap.css';
 
 interface RoadmapItem {
@@ -96,7 +97,7 @@ const QuarterlyRoadmap: React.FC = () => {
         throw new Error('No authentication token found');
       }
       
-      const url = `http://localhost:8080/api/v2/products/${product.productId}/roadmap/${selectedYear}/${selectedQuarter}`;
+      const url = `${API_BASE_URL}/v2/products/${product.productId}/roadmap/${selectedYear}/${selectedQuarter}`;
       
       const response = await fetch(url, {
         method: 'GET',
@@ -137,7 +138,7 @@ const QuarterlyRoadmap: React.FC = () => {
     }
     
     try {
-      const response = await fetch(`http://localhost:8080/api/v3/products/${product.productId}/backlog`, {
+      const response = await fetch(`${API_BASE_URL}/v3/products/${product.productId}/backlog`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -164,7 +165,7 @@ const QuarterlyRoadmap: React.FC = () => {
     try {
       // Fetch epic IDs that are already assigned to other quarters
       const response = await fetch(
-        `http://localhost:8080/api/products/${product.productId}/roadmap/assigned-epics?excludeYear=${selectedYear}&excludeQuarter=${selectedQuarter}`,
+        `${API_BASE_URL}/products/${product.productId}/roadmap/assigned-epics?excludeYear=${selectedYear}&excludeQuarter=${selectedQuarter}`,
         {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -228,7 +229,8 @@ const QuarterlyRoadmap: React.FC = () => {
             const reach = 0;
             const impact = 0;
             const confidence = 0;
-            const riceScore = reach * impact * confidence;
+            const effort = 1;
+            const riceScore = effort > 0 ? (impact * confidence * reach) / effort : 0;
             
             return {
               epicId,
@@ -242,7 +244,7 @@ const QuarterlyRoadmap: React.FC = () => {
               impact,
               confidence,
               riceScore,
-              effortRating: 0,
+              effortRating: 1,
               startDate: getQuarterStartDate(selectedYear, selectedQuarter),
               endDate: getQuarterEndDate(selectedYear, selectedQuarter)
             };
@@ -250,26 +252,16 @@ const QuarterlyRoadmap: React.FC = () => {
         });
         
         
-        // Log which epics were removed
-        const removedEpics = existingItems.filter(item => !selectedEpics.has(item.epicId));
       }
 
       const requestData = {
         year: selectedYear,
         quarter: selectedQuarter,
-        roadmapItems,
-        // DEBUG INFO - remove after fixing
-        debug: {
-          selectedEpicsCount: selectedEpics.size,
-          selectedEpicsArray: Array.from(selectedEpics),
-          availableEpicsCount: availableEpics.length,
-          isEditMode: isEditMode,
-          existingItemsCount: roadmapData?.roadmapItems?.length || 0
-        }
+        roadmapItems
       };
 
 
-      const response = await fetch(`http://localhost:8080/api/v2/products/${product?.productId}/roadmap`, {
+      const response = await fetch(`${API_BASE_URL}/v2/products/${product?.productId}/roadmap`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -312,7 +304,6 @@ const QuarterlyRoadmap: React.FC = () => {
     // Prevent duplicate calls
     const publishKey = `${selectedYear}-Q${selectedQuarter}`;
     if (publishRequestRef.current.has(publishKey)) {
-      console.log('Publish already in progress for:', publishKey);
       return;
     }
 
@@ -324,7 +315,7 @@ const QuarterlyRoadmap: React.FC = () => {
       setInlineError('');
 
       const response = await fetch(
-        `http://localhost:8080/api/v2/products/${product?.productId}/roadmap/${selectedYear}/${selectedQuarter}/publish`,
+        `${API_BASE_URL}/v2/products/${product?.productId}/roadmap/${selectedYear}/${selectedQuarter}/publish`,
         {
           method: 'POST',
           headers: {
@@ -347,7 +338,7 @@ const QuarterlyRoadmap: React.FC = () => {
         setInlineError(errorText || 'Failed to publish roadmap');
       }
     } catch (error) {
-      console.error('Publish error:', error);
+      // Handle publish error silently
       setInlineError('Failed to publish roadmap. Please try again.');
     } finally {
       setIsPublishing(false);
@@ -496,7 +487,7 @@ const QuarterlyRoadmap: React.FC = () => {
     if (field === 'effortRating' && !isEditMode) {
       try {
         const response = await fetch(
-          `http://localhost:8080/api/v2/products/${product?.productId}/roadmap/${selectedYear}/${selectedQuarter}/epics/${epicId}/effort-rating`, 
+          `${API_BASE_URL}/v2/products/${product?.productId}/roadmap/${selectedYear}/${selectedQuarter}/epics/${epicId}/effort-rating`, 
           {
             method: 'PUT',
             headers: {
@@ -536,11 +527,12 @@ const QuarterlyRoadmap: React.FC = () => {
         const updatedItem = { ...item, [field]: value };
         
         // Recalculate RICE score if any RICE component was updated
-        if (['reach', 'impact', 'confidence'].includes(field)) {
+        if (['reach', 'impact', 'confidence', 'effortRating'].includes(field)) {
           const reach = field === 'reach' ? value as number : updatedItem.reach || 0;
           const impact = field === 'impact' ? value as number : updatedItem.impact || 0;
           const confidence = field === 'confidence' ? value as number : updatedItem.confidence || 0;
-          updatedItem.riceScore = reach * impact * confidence;
+          const effort = field === 'effortRating' ? value as number : updatedItem.effortRating || 1;
+          updatedItem.riceScore = effort > 0 ? (impact * confidence * reach) / effort : 0;
         }
         
         return updatedItem;
@@ -561,7 +553,7 @@ const QuarterlyRoadmap: React.FC = () => {
     if (shouldAutoSave) {
       
       try {
-        const response = await fetch(`http://localhost:8080/api/v2/products/${product?.productId}/roadmap`, {
+        const response = await fetch(`${API_BASE_URL}/v2/products/${product?.productId}/roadmap`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -953,8 +945,8 @@ const QuarterlyRoadmap: React.FC = () => {
                       </td>
                       <td className="col-rice-score">
                         <span className="rice-score-display">
-                          {item.reach && item.impact && item.confidence 
-                            ? (item.reach * item.impact * item.confidence).toFixed(1)
+                          {item.reach && item.impact && item.confidence && item.effortRating
+                            ? ((item.impact * item.confidence * item.reach) / item.effortRating).toFixed(1)
                             : '-'
                           }
                         </span>
